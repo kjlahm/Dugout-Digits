@@ -1,0 +1,116 @@
+/* Drop existing tables before creating new ones. */
+DROP TABLE IF EXISTS DD_Person
+DROP TABLE IF EXISTS DD_PersonPosition
+DROP TABLE IF EXISTS DD_Position
+DROP TABLE IF EXISTS DD_TeamPerson
+DROP TABLE IF EXISTS DD_Team
+DROP TABLE IF EXISTS DD_Season
+DROP TABLE IF EXISTS DD_Game
+DROP TABLE IF EXISTS DD_Inning
+DROP TABLE IF EXISTS DD_HalfInning
+DROP TABLE IF EXISTS DD_AtBat
+DROP TABLE IF EXISTS DD_Pitch
+
+/* Create the tables. */
+CREATE TABLE DD_Invites (
+	personID BIGINT NOT NULL,
+	teamID BIGINT NOT NULL
+)
+
+CREATE TABLE DD_Person (
+	personID BIGINT NOT NULL AUTO INCREMENT,
+	firstName VARCHAR(30),
+	lastName VARCHAR(30),
+	email VARCHAR(60),
+	password VARCHAR(50),
+	imageURL VARCHAR(40),
+	
+	personType TINYINT,
+	birthday DATE,
+	height SMALLINT,
+	weight SMALLINT,
+	PRIMARY KEY(personID)
+)
+
+CREATE TABLE DD_Position (
+	positionID SMALLINT NOT NULL,
+	abbreviation VARCHAR(2) NOT NULL,
+	description VARCHAR(20) NOT NULL,
+	PRIMARY KEY(positionID)
+)
+
+CREATE TABLE DD_PersonPosition (
+	personID BIGINT NOT NULL,
+	positionID BIGINT NOT NULL,
+	FOREIGN KEY(personID) REFERENCES DD_Person(personID),
+	FOREIGN KEY(positionID) REFERENCES DD_Position(positionID)
+)
+
+CREATE TABLE DD_Team (
+	teamID BIGINT NOT NULL AUTO_INCREMENT,
+	name VARCHAR(50),
+	PRIMARY KEY(teamID)
+)
+
+CREATE TABLE DD_TeamPerson (
+	teamID BIGINT NOT NULL,
+	personID BIGINT NOT NULL,
+	FOREIGN KEY(teamID) REFERENCES DD_Team(teamID),
+	FOREIGN KEY(personID) REFERENCES DD_Person(personID)
+)
+
+CREATE TABLE DD_Season (
+	seasonID BIGINT NOT NULL AUTO_INCREMENT,
+	teamID BIGINT NOT NULL,
+	seasonYear SMALLINT,
+	PRIMARY KEY(seasonID),
+	FOREIGN KEY(teamID) REFERENCES DD_Team(teamID)
+)
+
+CREATE TABLE DD_Game (
+	gameID BIGINT NOT NULL AUTO_INCREMENT,
+	awayTeam BIGINT,
+	homeTeam BIGINT,
+	seasonID BIGINT,
+	gameDate DATETIME,
+	location VARCHAR(80),
+	PRIMARY KEY(gameID),
+	FOREIGN KEY(awayTeam) REFERENCES DD_Team(teamID),
+	FOREIGN KEY(homeTeam) REFERENCES DD_Team(teamID)
+)
+
+CREATE TABLE DD_HalfInning (
+	halfInningID BIGINT NOT NULL AUTO_INCREMENT,
+	runs TINYINT,
+	hits TINYINT,
+	errors TINYINT,
+	PRIMARY KEY(halfInningID)
+)
+
+CREATE TABLE DD_Inning (
+	gameID BIGINT,
+	topHalf BIGINT,
+	bottomHalf BIGINT,
+	FOREIGN KEY(gameID) REFERENCES DD_Game(gameID),
+	FOREIGN KEY(topHalf) REFERENCES DD_HalfInning(halfInningID),
+	FOREIGN KEY(bottomHalf) REFERENCES DD_HalfInning(halfInningID)
+)
+
+CREATE TABLE DD_Pitch (
+	pitchID BIGINT NOT NULL AUTO_INCREMENT,
+	pitcher BIGINT,
+	batter BIGINT,
+	pitchType SMALLINT,
+	speed TINYINT,
+	pitchResult TINYINT,
+	PRIMARY KEY(pitchID),
+	FOREIGN KEY(pitcher) REFERENCES DD_Person(personID),
+	FOREIGN KEY(batter) REFERENCES DD_Person(personID)
+)
+
+CREATE TABLE DD_AtBat (
+	halfInningID BIGINT,
+	pitchID BIGINT,
+	FOREIGN KEY(halfInningID) REFERENCES DD_HalfInning(halfInningID),
+	FOREIGN KEY(pitchID) REFERENCES DD_Pitch(pitchID)
+)
