@@ -200,12 +200,15 @@ namespace DugoutDigits.Utilities
         public Person GetPersonInformation(String email) {
             MySqlDataReader dr = null;
             Person returnVal = null;
+            Permissions permissions = null;
             String query = "SELECT * FROM ";
-            query += AppConstants.MYSQL_TABLE_PERSON;
+            query += AppConstants.MYSQL_TABLE_PERSON + " person JOIN " + AppConstants.MYSQL_TABLE_PERMISSIONS + "permissions";
+            query += " ON person.personID = permissions.personID";
             query += " WHERE email='" + email + "'";
 
             try {
                 returnVal = new Person();
+                permissions = new Permissions();
                 connection.Open();
                 command.CommandText = query;
                 dr = command.ExecuteReader();
@@ -218,6 +221,10 @@ namespace DugoutDigits.Utilities
                 returnVal.imageURL = dr.GetString("imageURL");
                 returnVal.height = dr.GetInt16("height");
                 returnVal.weight = dr.GetInt16("weight");
+
+                permissions.coachEnabled = (bool)dr.GetInt16("coachEnabled");
+
+                returnVal.permissions = permissions;
             }
             catch (Exception ex) {
             }
@@ -765,6 +772,51 @@ namespace DugoutDigits.Utilities
             query += " (teamID, personID) VALUES (";
             query += teamID + ", " + personID + ")";
             return ExecuteInsert(query);
+        }
+
+        public Team GetTeam(long teamID)
+        {
+            MySqlDataReader dr = null;
+            Team returnVal = null;
+            Person coach = null;
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_TEAM + " JOIN " + AppConstants.MYSQL_TABLE_PERSON;
+            query += " ON coach = personID";
+            query += " WHERE teamID=" + teamID;
+
+            try
+            {
+                returnVal = new Team();
+                coach = new Person();
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                dr.Read();
+
+                returnVal.ID = dr.GetInt64("teamID");
+                returnVal.name = dr.GetString("name");
+
+                coach.ID = dr.GetString("personID");
+                coach.firstName = dr.GetString("firstName");
+                coach.lastName = dr.GetString("lastName");
+                coach.email = dr.GetString("email");
+                coach.setPassword(dr.GetString("password"));
+                coach.imageURL = dr.GetString("imageURL");
+                coach.height = dr.GetInt16("height");
+                coach.weight = dr.GetInt16("weight");
+
+                returnVal.coach = coach;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                connection.Close();
+            }
+
+            return returnVal;
         }
     }
 }

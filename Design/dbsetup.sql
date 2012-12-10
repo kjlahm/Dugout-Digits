@@ -1,6 +1,7 @@
 /* Drop existing tables before creating new ones. */
 DROP TABLE IF EXISTS DD_Invites
 DROP TABLE IF EXISTS DD_Person
+DROP TABLE IF EXISTS DD_Permissions
 DROP TABLE IF EXISTS DD_PersonPosition
 DROP TABLE IF EXISTS DD_Position
 DROP TABLE IF EXISTS DD_TeamPerson
@@ -35,6 +36,11 @@ CREATE TABLE DD_Person (
 	height SMALLINT,
 	weight SMALLINT,
 	PRIMARY KEY(personID)
+)
+
+CREATE TABLE DD_Permissions (
+	personID BIGINT NOT NULL,
+	coachEnabled TINYINT NOT NULL
 )
 
 CREATE TABLE DD_Position (

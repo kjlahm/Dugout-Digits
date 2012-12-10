@@ -21,6 +21,7 @@ namespace DugoutDigits.Objects
         public int weight { get; set; }   // The weight of the person (in pounds).
 
         public long ID { get; set; }
+        public Permissions permissions { get; set; }
 
         private String password;            // The password for the user.
         private List<Team> teams;           // The teams the user is associated with.

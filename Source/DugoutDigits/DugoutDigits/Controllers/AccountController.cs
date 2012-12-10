@@ -9,6 +9,7 @@ using System.Web.Security;
 using DugoutDigits.Models;
 using DugoutDigits.Objects;
 using DugoutDigits.Utilities;
+using System.Net;
 
 namespace DugoutDigits.Controllers {
     public class AccountController : Controller {
@@ -27,25 +28,33 @@ namespace DugoutDigits.Controllers {
                 DBAccessor dba = new DBAccessor();
                 string name = dba.GetUserName(User.Identity.Name);
 
-                // Create an SMTP client to send the email
-                SmtpClient client = new SmtpClient();
-                client.Host = "localhost";
-
                 // Form an email
-                MailAddress to = new MailAddress(inviteEmail);
-                MailAddress from = new MailAddress(AppConstants.EMAIL_ADMIN);
-                MailMessage message = new MailMessage(from, to);
                 String body = "See " + name + "'s message below:\n\n" + inviteMessage + "\n\nTo join Dugout Digits visit http://dugoutdigits.com/Account/Register";
                 //body += "\n\n";
-                message.Body = body;
-                message.Subject = name + " has invited you to join Dugout Digits";
 
-                /*MailMessage msg = new MailMessage(AppConstants.EMAIL_ADMIN, inviteEmail);
-                msg.Subject = name + " has invited you to join Dugout Digits";
-                msg.Body = "See " + name + "'s message below:\n\n" + inviteMessage + "\n\nTo join Dugout Digits visit http://dugoutdigits.com";*/
-
-                // Send the message
-                client.Send(message);
+                MailMessage newMessage = new MailMessage();
+                SmtpClient mailService = new SmtpClient(); 
+                
+                //set the addresses
+                newMessage.From = new MailAddress(AppConstants.EMAIL_ADMIN);
+                newMessage.To.Add(inviteEmail);
+                
+                //set the content
+                newMessage.Subject = name + " has invited you to join Dugout Digits";
+                newMessage.Body = body;
+                
+                //send the message
+                mailService.Port = 587;
+                mailService.EnableSsl = true;
+                
+                mailService.UseDefaultCredentials = false;
+                mailService.DeliveryMethod = SmtpDeliveryMethod.Network;
+                
+                mailService.Host = "smtp.gmail.com";
+                
+                //to change the port (default is 25), we set the port property
+                mailService.Credentials = new NetworkCredential("kjlahm@gmail.com", AppConstants.EMAIL_PASS);
+                mailService.Send(newMessage);
             }
             catch (Exception ex) {
                 successMessage = ex.Message;
