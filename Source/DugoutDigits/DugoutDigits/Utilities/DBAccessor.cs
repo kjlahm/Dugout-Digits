@@ -658,14 +658,112 @@ namespace DugoutDigits.Utilities
         /// </summary>
         /// <param name="playerID">The ID of the player to link.</param>
         /// <param name="teamID">The ID of the team they're being linked to.</param>
-        /// <returns>Sujccess of the link.</returns>
+        /// <returns>Success of the link.</returns>
         public bool AddPlayerToTeam(long playerID, long teamID) {
             // Add the entry to the DB
             String query = "INSERT INTO ";
             query += AppConstants.MYSQL_TABLE_TEAMPERSON;
             query += " (personID, teamID) VALUES (";
-            query += "'" + playerID + "', ";
+            query += playerID + ", ";
             query += teamID + ")";
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Adds an entry to the invite database if one doesn't exist for the given 
+        /// information or it gets the ID of the invite that does exist. The ID of 
+        /// the associated invite is returned.
+        /// </summary>
+        /// <param name="invitee">The email of the person being invited.</param>
+        /// <param name="invitor">The ID of the person inviting.</param>
+        /// <param name="teamID">The ID of the team they're being invited to.</param>
+        /// <returns>The ID of the invite that was added.</returns>
+        public long AddInvite(string invitee, long invitor, long teamID) {
+            // See if an entry exists with the given data
+            long inviteID = 0;
+            MySqlDataReader dr = null;
+
+            String query = "SELECT inviteID FROM ";
+            query += AppConstants.MYSQL_TABLE_INVITES;
+            query += " WHERE invitee='" + invitee + "' AND ";
+            query += "personID=" + invitor + " AND ";
+            query += "teamID=" + teamID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                inviteID = dr.GetInt64("inviteID");
+            }
+            catch (Exception ex) {
+            }
+            finally {
+                connection.Close();
+            }
+
+            if (dr.RecordsAffected == 0) {
+                // Insert the invite entry into the database if there isn't one
+                query = "INSERT INTO ";
+                query += AppConstants.MYSQL_TABLE_INVITES;
+                query += " (invitee, personID, teamID) VALUE ('";
+                query += invitee + "', ";
+                query += invitor + ", ";
+                query += teamID + ")";
+                bool insertSuccess = ExecuteInsert(query);
+
+                // Get the ID for the new entry into the database
+                try {
+                    connection.Open();
+                    command.CommandText = query;
+                    dr = command.ExecuteReader();
+                    inviteID = dr.GetInt64("inviteID");
+                }
+                catch (Exception ex) {
+                }
+                finally {
+                    connection.Close();
+                }
+            }
+            return inviteID;
+        }
+
+        public bool AcceptInvite(string email, long inviteID) {
+            // Get the team ID from the invite table
+            long teamID, personID;
+            MySqlDataReader dr = null;
+
+            String query = "SELECT teamID, person.personID FROM ";
+            query += AppConstants.MYSQL_TABLE_INVITES + " invites JOIN " + AppConstants.MYSQL_TABLE_PERSON + " person";
+            query += " ON invites.invitee = person.email ";
+            query += " WHERE inviteID=" + inviteID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                dr.Read();
+                teamID = dr.GetInt64("inviteID");
+                personID = dr.GetInt64("personID");
+            }
+            catch (Exception ex) {
+                teamID = 0;
+                personID = 0;
+            }
+            finally {
+                connection.Close();
+            }
+
+            // Remove the invite from the database
+            query = "DELETE FROM ";
+            query += AppConstants.MYSQL_TABLE_INVITES;
+            query += " WHERE inviteID=" + inviteID;
+            ExecuteInsert(query);
+
+            // Add the player to the team he was invited to
+            query = "INSERT INTO ";
+            query += AppConstants.MYSQL_TABLE_TEAMPERSON;
+            query += " (teamID, personID) VALUES (";
+            query += teamID + ", " + personID + ")";
             return ExecuteInsert(query);
         }
     }

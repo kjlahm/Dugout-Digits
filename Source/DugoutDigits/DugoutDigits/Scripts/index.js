@@ -15,7 +15,6 @@
             $('#team-requests').html(data.message);
             $('#inner-content').html($('#json-buffer').html());
             $('#json-buffer').empty();
-            alert($('#json-buffer').html());
         },
         error: function () {
             alert("error making get teams call");
@@ -45,16 +44,32 @@ function render_addteam() {
 }
 
 function render_inviteuser() {
-    var returnVal = "<h3>Invite Your Team</h3>\n";
-    returnVal += "<p>Send invites to your team using the form below. When players create an account with Dugout ";
-    returnVal += "Digits they will be able to COMPLETE THIS INFORMATION LATER.</p>\n";
-    returnVal += "<form>\n<h4>Email</h4>\n";
-    returnVal += "<input type='text' name='invite-email' />\n";
-    returnVal += "<h4>Message</h4>\n";
-    returnVal += "<input type='text' name='invite-message' onkeypress='formsubmithandler(event, \"invite\")' />\n";
-    returnVal += "<div class='submit-button' onClick='action_inviteuser()'>Send an Invite</div>\n</form>\n";
-    returnVal += "<div id='inviteuser-success-message'></div>";
-    return returnVal;
+    /* Call and get a drop down of the teams. */
+    var p = { "association": 0 };
+    $.ajax({
+        url: "Team/AJAX_GetTeamsDropDown",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            var returnVal = "<h3>Invite Your Team</h3>\n";
+            returnVal += "<p>Send invites to your team using the form below. When players create an account with Dugout ";
+            returnVal += "Digits they will be able to COMPLETE THIS INFORMATION LATER.</p>\n";
+            returnVal += "<form>\n<h4>Email</h4>\n";
+            returnVal += "<input type='text' name='invite-email' />\n";
+            returnVal += "<h4>Message</h4>\n";
+            returnVal += "<input type='text' name='invite-message' onkeypress='formsubmithandler(event, \"invite\")' />\n";
+            returnVal += "<h4>Invite To Join</h4>\n";
+            returnVal += data.message;
+            returnVal += "<div class='submit-button' onClick='action_inviteuser()'>Send an Invite</div>\n</form>\n";
+            returnVal += "<div id='inviteuser-success-message'></div>";
+            $('#innercontent-inviteuser').html(returnVal);
+        },
+        error: function () {
+            $('#innercontent-inviteuser').html("<p>Error building invitation form.</p>");
+        }
+    });
+
+    return "<div id='innercontent-inviteuser'></div>";
 }
 
 function action_searchteams() {
@@ -101,7 +116,8 @@ function action_inviteuser() {
     $('#inviteuser-success-message').html("");
 
     /* get the team name from the input field */
-    var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('input[name="invite-message"]').val() };
+    var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('input[name="invite-message"]').val(), "teamID": $('#teamdropdown').val() };
+    /*var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('input[name="invite-message"]').val(), "teamID": $('input[name="teamdropdown"]').val() };*/
 
     /* make the call to the invite user web service */
     $.ajax({
@@ -112,7 +128,7 @@ function action_inviteuser() {
             $('#inviteuser-success-message').html(data.message);
         },
         error: function () {
-            alert("error making add team call");
+            alert("error making invite call");
         }
     });
 }

@@ -38,6 +38,43 @@ namespace DugoutDigits.Controllers
         }
 
         /// <summary>
+        /// Returns an HTML drop down containing a list of teams the logged in 
+        /// user is associated with. The association parameter allows you to 
+        /// pick if you want teams the user coaches (0), is a member of (1) or 
+        /// both (2).
+        /// </summary>
+        /// <param name="association">The desired associativity of the user to the teams.</param>
+        /// <returns>An HTML drop down the teams the user is associated with.</returns>
+        public ActionResult AJAX_GetTeamsDropDown(int association) {
+            // Get the teams associated with the user who's logged in
+            DBAccessor dba = new DBAccessor();
+            List<Team> teamsCoach = new List<Team>();
+            List<Team> teamsMember = new List<Team>();
+
+            if (association == 0 || association == 2) {
+                teamsCoach = dba.GetTeamListCoach(User.Identity.Name);
+            }
+            if (association == 1 || association == 2) {
+                teamsMember = dba.GetTeamListMember(User.Identity.Name);
+            }
+
+            // Create dropdown to hold the teams
+            string result = "<select id='teamdropdown'>\n";
+            foreach (Team team in teamsCoach) {
+                result += "<option value='" + team.ID + "'>" + team.name + "</option>\n";
+            }
+            foreach (Team team in teamsMember) {
+                result += "<option value='" + team.ID + "'>" + team.name + "</option>\n";
+            }
+            result += "</select>\n";
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
         /// Returns a list of teams associated with the authenticated user.
         /// </summary>
         /// <returns>HTML table containing a list of teams.</returns>

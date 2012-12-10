@@ -1,4 +1,5 @@
 /* Drop existing tables before creating new ones. */
+DROP TABLE IF EXISTS DD_Invites
 DROP TABLE IF EXISTS DD_Person
 DROP TABLE IF EXISTS DD_PersonPosition
 DROP TABLE IF EXISTS DD_Position
@@ -11,8 +12,12 @@ DROP TABLE IF EXISTS DD_HalfInning
 DROP TABLE IF EXISTS DD_AtBat
 DROP TABLE IF EXISTS DD_Pitch
 
+ALTER TABLE contacts ADD email VARCHAR(60) FIRST;
+
 /* Create the tables. */
 CREATE TABLE DD_Invites (
+	inviteID BIGINT NOT NULL AUTO_INCREMENT,
+	invitee VARCHAR(60) NOT NULL,
 	personID BIGINT NOT NULL,
 	teamID BIGINT NOT NULL
 )

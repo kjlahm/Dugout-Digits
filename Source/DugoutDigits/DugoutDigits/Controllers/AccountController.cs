@@ -19,7 +19,7 @@ namespace DugoutDigits.Controllers {
         /// <param name="inviteEmail">The email of the person to invite.</param>
         /// <param name="inviteMessage">The message to send with the invitation.</param>
         /// <returns>Success of the call.</returns>
-        public ActionResult AJAX_InviteUser(string inviteEmail, string inviteMessage) {
+        public ActionResult AJAX_InviteUser(string inviteEmail, string inviteMessage, long teamID) {
             string successMessage = "Message sent to " + inviteEmail;
 
             try {
@@ -35,7 +35,9 @@ namespace DugoutDigits.Controllers {
                 MailAddress to = new MailAddress(inviteEmail);
                 MailAddress from = new MailAddress(AppConstants.EMAIL_ADMIN);
                 MailMessage message = new MailMessage(from, to);
-                message.Body = "See " + name + "'s message below:\n\n" + inviteMessage + "\n\nTo join Dugout Digits visit http://dugoutdigits.com/Account/Register";
+                String body = "See " + name + "'s message below:\n\n" + inviteMessage + "\n\nTo join Dugout Digits visit http://dugoutdigits.com/Account/Register";
+                //body += "\n\n";
+                message.Body = body;
                 message.Subject = name + " has invited you to join Dugout Digits";
 
                 /*MailMessage msg = new MailMessage(AppConstants.EMAIL_ADMIN, inviteEmail);
