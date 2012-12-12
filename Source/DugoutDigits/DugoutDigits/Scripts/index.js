@@ -1,11 +1,12 @@
 ﻿function render_myteams() {
+    $('#inner-content').html("<div id='team-tables'></div><div id='team-requests'></div>");
     $.ajax({
         url: "Team/AJAX_GetTeamsTable",
         success: function (data) {
-            $('#json-buffer').html(data.message);
+            $('#team-tables').html(data.message);
         },
         error: function () {
-            alert("error making get teams call");
+            alert("error making get teams table call");
         }
     });
 
@@ -13,11 +14,9 @@
         url: "Team/AJAX_GetRequestTable",
         success: function (data) {
             $('#team-requests').html(data.message);
-            $('#inner-content').html($('#json-buffer').html());
-            $('#json-buffer').empty();
         },
         error: function () {
-            alert("error making get teams call");
+            alert("error making get requests table call");
         }
     });
 }
@@ -72,6 +71,14 @@ function render_inviteuser() {
     return "<div id='innercontent-inviteuser'></div>";
 }
 
+function render_registercoach() {
+    var returnVal = "<h3>Interested in Joining?</h3>\n";
+    returnVal += "<p>If you'd like to use Dugout Digits to help manage your team send an email ";
+    returnVal += "to <a href='mailto:admin@dugoutdigits.com'>admin@dugoutdigits.com</a></p>\n";
+    returnVal += "<p>Be sure to include the email you use to login to Dugout Digits in the message</p>\n";
+    return returnVal;
+}
+
 function action_searchteams() {
     /* get the team name from the input field */
     var p = { "teamName": $('input[name="search-team-name"]').val() };
@@ -121,7 +128,7 @@ function action_inviteuser() {
 
     /* make the call to the invite user web service */
     $.ajax({
-        url: "Account/AJAX_InviteUser",
+        url: "Team/AJAX_InviteUser",
         data: p,
         dataType: "json",
         success: function (data) {
@@ -202,6 +209,9 @@ function submenu_handler(itemClicked) {
         case "subtab-inviteuser":
             $('#inner-content').html(render_inviteuser());
             break;
+        case "subtab-registercoach":
+            $('#inner-content').html(render_registercoach());
+            break;
         default:
             $('#inner-content').html("An error seems to have occured. Sorry for the inconvenience.");
             break;
@@ -244,6 +254,7 @@ function submenu_clearClasses() {
     $('#subtab-searchteams').removeClass("active-subtab inactive-subtab").addClass("inactive-subtab");
     $('#subtab-addteam').removeClass("active-subtab inactive-subtab").addClass("inactive-subtab");
     $('#subtab-inviteuser').removeClass("active-subtab inactive-subtab").addClass("inactive-subtab");
+    $('#subtab-registercoach').removeClass("active-subtab inactive-subtab").addClass("inactive-subtab");
 }
 
 $(document).ready(function () {
@@ -252,6 +263,7 @@ $(document).ready(function () {
     $('#subtab-searchteams').click(function () { submenu_handler("subtab-searchteams"); });
     $('#subtab-addteam').click(function () { submenu_handler("subtab-addteam"); });
     $('#subtab-inviteuser').click(function () { submenu_handler("subtab-inviteuser"); });
+    $('#subtab-registercoach').click(function () { submenu_handler("subtab-registercoach"); });
 
     /* set the default sub tab */
     submenu_handler("subtab-myteams");

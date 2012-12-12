@@ -16,7 +16,9 @@
             <div id="sidebar-teamlist">
                 <h3>My Teams</h3>
                 <div id="sidebar-teamlist-content"></div>
-                <div onClick="submenu_handler('subtab-addteam')">Add a Team</div>
+                @if (ViewBag.CoachPermission) {
+                    <div onClick="submenu_handler('subtab-addteam')">Add a Team</div>
+                }
             </div>
         }
         else {
@@ -66,8 +68,12 @@
                 <ul>
                     <li id="subtab-myteams" class="active-subtab">My Teams</li>
                     <li id="subtab-searchteams" class="inactive-subtab">Search Teams</li>
-                    <li id="subtab-addteam" class="inactive-subtab">Add a Team</li>
-                    <li id="subtab-inviteuser" class="inactive-subtab">Invite a User</li>
+                    @if (ViewBag.CoachPermission) {
+                        <li id="subtab-addteam" class="inactive-subtab">Add a Team</li>
+                        <li id="subtab-inviteuser" class="inactive-subtab">Invite a User</li>
+                    } else {
+                        <li id="subtab-registercoach" class="inactive-subtab">Register as a Coach</li>
+                    }
                 </ul>
             </div>
             <div id="inner-content"></div>

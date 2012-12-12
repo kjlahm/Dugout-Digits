@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Web.Mvc;
+using System.Web.Routing;
 using System.Web.Security;
 
 namespace DugoutDigits.Models {
@@ -67,6 +68,8 @@ namespace DugoutDigits.Models {
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
+
+        public String ReturnTo { get; set; }
     }
 
     public class EditModel {

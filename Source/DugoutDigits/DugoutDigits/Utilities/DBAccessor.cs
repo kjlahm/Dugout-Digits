@@ -100,7 +100,13 @@ namespace DugoutDigits.Utilities
             query += "'" + newUser.lastName + "', ";
             query += "'" + newUser.email + "', ";
             query += "'" + newUser.getPassword() + "')";
-            return ExecuteInsert(query);
+            bool addUser = ExecuteInsert(query);
+
+            query = "INSERT INTO ";
+            query += AppConstants.MYSQL_TABLE_PERMISSIONS;
+            query += " (personID) VALUES (";
+            query += GetPersonID(newUser.email) + ")";
+            return addUser && ExecuteInsert(query);
         }
 
         /// <summary>
@@ -202,7 +208,7 @@ namespace DugoutDigits.Utilities
             Person returnVal = null;
             Permissions permissions = null;
             String query = "SELECT * FROM ";
-            query += AppConstants.MYSQL_TABLE_PERSON + " person JOIN " + AppConstants.MYSQL_TABLE_PERMISSIONS + "permissions";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person JOIN " + AppConstants.MYSQL_TABLE_PERMISSIONS + " permissions";
             query += " ON person.personID = permissions.personID";
             query += " WHERE email='" + email + "'";
 
@@ -214,15 +220,16 @@ namespace DugoutDigits.Utilities
                 dr = command.ExecuteReader();
 
                 dr.Read();
+                returnVal.ID = dr.GetInt64("personID");
                 returnVal.firstName = dr.GetString("firstName");
                 returnVal.lastName = dr.GetString("lastName");
                 returnVal.email = dr.GetString("email");
                 returnVal.setPassword(dr.GetString("password"));
-                returnVal.imageURL = dr.GetString("imageURL");
-                returnVal.height = dr.GetInt16("height");
-                returnVal.weight = dr.GetInt16("weight");
+                //returnVal.imageURL = dr.GetString("imageURL");
+                //returnVal.height = dr.GetInt16("height");
+                //returnVal.weight = dr.GetInt16("weight");
 
-                permissions.coachEnabled = (bool)dr.GetInt16("coachEnabled");
+                permissions.coachEnabled = !(dr.GetInt16("coachEnabled") == 0);
 
                 returnVal.permissions = permissions;
             }
@@ -348,7 +355,7 @@ namespace DugoutDigits.Utilities
             MySqlDataReader dr = null;
             Team returnVal = null;
 
-            String query = "SELECT name, personID, firstName, lastName, email, imageURL FROM ";
+            String query = "SELECT * FROM ";
             query += AppConstants.MYSQL_TABLE_TEAM + " JOIN " + AppConstants.MYSQL_TABLE_PERSON;
             query += " ON coach = personID";
             query += " WHERE teamID=" + id;
@@ -367,10 +374,15 @@ namespace DugoutDigits.Utilities
                 dr = command.ExecuteReader();
 
                 dr.Read();
+                
                 Person tempPerson = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
                 tempPerson.ID = dr.GetInt64("personID");
                 tempPerson.email = dr.GetString("email");
-                //tempPerson.imageURL = dr.GetString("imageURL");
+                tempPerson.setPassword(dr.GetString("password"));
+                //coach.imageURL = dr.GetString("imageURL");
+                tempPerson.height = dr.GetInt16("height");
+                tempPerson.weight = dr.GetInt16("weight");
+
                 returnVal = new Team(dr.GetString("name"), tempPerson);
                 returnVal.ID = id;
             }
@@ -628,11 +640,11 @@ namespace DugoutDigits.Utilities
             List<Request> returnVal = new List<Request>();
             MySqlDataReader dr = null;
 
-            long coachID = GetPersonID(email);
+            Person coach = GetPersonInformation(email);
 
-            String query = "SELECT requestID, name, firstName, lastName FROM ";
+            String query = "SELECT * FROM ";
             query += AppConstants.MYSQL_TABLE_PERSON + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_TEAM + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_REQUESTS;
-            query += " WHERE coachID='" + coachID + "'";
+            query += " WHERE coachID='" + coach.ID + "'";
 
             try {
                 connection.Open();
@@ -644,8 +656,18 @@ namespace DugoutDigits.Utilities
                 Request request;
                 while (dr.Read()) {
                     requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    requestee.ID = dr.GetInt64("personID");
+                    requestee.email = dr.GetString("email");
+                    //requestee.setPassword(dr.GetString("password"));
+                    requestee.imageURL = dr.GetString("imageURL");
+                    //requestee.birthday = dr.GetDateTime("birthday");
+                    //requestee.height = dr.GetInt16("height");
+                    //requestee.weight = dr.GetInt16("weight");
+
                     team = new Team();
                     team.name = dr.GetString("name");
+                    team.coach = coach;
+
                     request = new Request(requestee, team);
                     request.ID = dr.GetInt64("requestID");
                     returnVal.Add(request);
@@ -696,11 +718,14 @@ namespace DugoutDigits.Utilities
             query += "personID=" + invitor + " AND ";
             query += "teamID=" + teamID;
 
+            bool inviteFound = false;
             try {
                 connection.Open();
                 command.CommandText = query;
                 dr = command.ExecuteReader();
+                dr.Read();
                 inviteID = dr.GetInt64("inviteID");
+                inviteFound = true;
             }
             catch (Exception ex) {
             }
@@ -708,21 +733,22 @@ namespace DugoutDigits.Utilities
                 connection.Close();
             }
 
-            if (dr.RecordsAffected == 0) {
+            if (!inviteFound) {
                 // Insert the invite entry into the database if there isn't one
-                query = "INSERT INTO ";
-                query += AppConstants.MYSQL_TABLE_INVITES;
-                query += " (invitee, personID, teamID) VALUE ('";
-                query += invitee + "', ";
-                query += invitor + ", ";
-                query += teamID + ")";
-                bool insertSuccess = ExecuteInsert(query);
+                String query2 = "INSERT INTO ";
+                query2 += AppConstants.MYSQL_TABLE_INVITES;
+                query2 += " (invitee, personID, teamID) VALUE ('";
+                query2 += invitee + "', ";
+                query2 += invitor + ", ";
+                query2 += teamID + ")";
+                bool insertSuccess = ExecuteInsert(query2);
 
                 // Get the ID for the new entry into the database
                 try {
                     connection.Open();
                     command.CommandText = query;
                     dr = command.ExecuteReader();
+                    dr.Read();
                     inviteID = dr.GetInt64("inviteID");
                 }
                 catch (Exception ex) {
@@ -734,7 +760,14 @@ namespace DugoutDigits.Utilities
             return inviteID;
         }
 
-        public bool AcceptInvite(string email, long inviteID) {
+        /// <summary>
+        /// Mark the invite as accepted (remove from DB) and add the invited player 
+        /// to the team they were invited to.
+        /// </summary>
+        /// <param name="email">Email address of the invited player.</param>
+        /// <param name="inviteID">The ID of the invitation.</param>
+        /// <returns>The team information the player was invited to join.</returns>
+        public Team AcceptInvite(string email, long inviteID) {
             // Get the team ID from the invite table
             long teamID, personID;
             MySqlDataReader dr = null;
@@ -749,12 +782,15 @@ namespace DugoutDigits.Utilities
                 command.CommandText = query;
                 dr = command.ExecuteReader();
                 dr.Read();
-                teamID = dr.GetInt64("inviteID");
+                teamID = dr.GetInt64("teamID");
                 personID = dr.GetInt64("personID");
+                connection.Close();
             }
             catch (Exception ex) {
                 teamID = 0;
                 personID = 0;
+                connection.Close();
+                return null;
             }
             finally {
                 connection.Close();
@@ -764,59 +800,18 @@ namespace DugoutDigits.Utilities
             query = "DELETE FROM ";
             query += AppConstants.MYSQL_TABLE_INVITES;
             query += " WHERE inviteID=" + inviteID;
-            ExecuteInsert(query);
+            bool removeInvite = ExecuteInsert(query);
 
             // Add the player to the team he was invited to
-            query = "INSERT INTO ";
-            query += AppConstants.MYSQL_TABLE_TEAMPERSON;
-            query += " (teamID, personID) VALUES (";
-            query += teamID + ", " + personID + ")";
-            return ExecuteInsert(query);
-        }
-
-        public Team GetTeam(long teamID)
-        {
-            MySqlDataReader dr = null;
-            Team returnVal = null;
-            Person coach = null;
-            String query = "SELECT * FROM ";
-            query += AppConstants.MYSQL_TABLE_TEAM + " JOIN " + AppConstants.MYSQL_TABLE_PERSON;
-            query += " ON coach = personID";
-            query += " WHERE teamID=" + teamID;
-
-            try
-            {
-                returnVal = new Team();
-                coach = new Person();
-                connection.Open();
-                command.CommandText = query;
-                dr = command.ExecuteReader();
-
-                dr.Read();
-
-                returnVal.ID = dr.GetInt64("teamID");
-                returnVal.name = dr.GetString("name");
-
-                coach.ID = dr.GetString("personID");
-                coach.firstName = dr.GetString("firstName");
-                coach.lastName = dr.GetString("lastName");
-                coach.email = dr.GetString("email");
-                coach.setPassword(dr.GetString("password"));
-                coach.imageURL = dr.GetString("imageURL");
-                coach.height = dr.GetInt16("height");
-                coach.weight = dr.GetInt16("weight");
-
-                returnVal.coach = coach;
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                connection.Close();
+            bool addSuccess = false;
+            if (removeInvite) {
+                addSuccess = AddPlayerToTeam(personID, teamID);
             }
 
-            return returnVal;
+            if (addSuccess) {
+                return GetTeamDetails(teamID);
+            }
+            return null;
         }
     }
 }

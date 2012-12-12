@@ -14,60 +14,6 @@ using System.Net;
 namespace DugoutDigits.Controllers {
     public class AccountController : Controller {
 
-        /// <summary>
-        /// Sends an invite email to the given email with the given message.
-        /// </summary>
-        /// <param name="inviteEmail">The email of the person to invite.</param>
-        /// <param name="inviteMessage">The message to send with the invitation.</param>
-        /// <returns>Success of the call.</returns>
-        public ActionResult AJAX_InviteUser(string inviteEmail, string inviteMessage, long teamID) {
-            string successMessage = "Message sent to " + inviteEmail;
-
-            try {
-                // Get the name of the authenticated user
-                DBAccessor dba = new DBAccessor();
-                string name = dba.GetUserName(User.Identity.Name);
-
-                // Form an email
-                String body = "See " + name + "'s message below:\n\n" + inviteMessage + "\n\nTo join Dugout Digits visit http://dugoutdigits.com/Account/Register";
-                //body += "\n\n";
-
-                MailMessage newMessage = new MailMessage();
-                SmtpClient mailService = new SmtpClient(); 
-                
-                //set the addresses
-                newMessage.From = new MailAddress(AppConstants.EMAIL_ADMIN);
-                newMessage.To.Add(inviteEmail);
-                
-                //set the content
-                newMessage.Subject = name + " has invited you to join Dugout Digits";
-                newMessage.Body = body;
-                
-                //send the message
-                mailService.Port = 587;
-                mailService.EnableSsl = true;
-                
-                mailService.UseDefaultCredentials = false;
-                mailService.DeliveryMethod = SmtpDeliveryMethod.Network;
-                
-                mailService.Host = "smtp.gmail.com";
-                
-                //to change the port (default is 25), we set the port property
-                mailService.Credentials = new NetworkCredential("kjlahm@gmail.com", AppConstants.EMAIL_PASS);
-                mailService.Send(newMessage);
-            }
-            catch (Exception ex) {
-                successMessage = ex.Message;
-                //successMessage = "Error sending email to " + inviteEmail;
-            }
-
-            // Return the success message of the addition
-            return Json(
-                new { message = successMessage },
-                JsonRequestBehavior.AllowGet
-            );
-        }
-
         //
         // GET: /Account/LogOn
         public ActionResult LogOn() {
@@ -90,7 +36,9 @@ namespace DugoutDigits.Controllers {
                 if (resultSplit[0].Equals("success")) {
 
                     FormsAuthentication.SetAuthCookie(model.Email, model.RememberMe);
-                    HttpCookie cookie = new HttpCookie("DD_name", resultSplit[1]);
+
+                    // Add a name cookie
+                    HttpCookie cookie = new HttpCookie(AppConstants.COOKIE_NAME, resultSplit[1]);
                     cookie.Expires = DateTime.Now.AddDays(1000);
                     this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
                     
@@ -121,6 +69,9 @@ namespace DugoutDigits.Controllers {
         //
         // GET: /Account/Register
         public ActionResult Register() {
+            String returnTo = Request.QueryString["returnTo"];
+            RegisterModel model = new RegisterModel();
+            model.ReturnTo = returnTo;
             return View();
         }
 
@@ -142,11 +93,16 @@ namespace DugoutDigits.Controllers {
 
                     // Set the appropriate cookies
                     FormsAuthentication.SetAuthCookie(model.Email, false /* createPersistentCookie */);
-                    HttpCookie cookie = new HttpCookie("DD_name", model.FirstName+" "+model.LastName);
+                    HttpCookie cookie = new HttpCookie(AppConstants.COOKIE_NAME, model.FirstName + " " + model.LastName);
                     cookie.Expires = DateTime.Now.AddDays(1000);
                     this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
 
-                    return RedirectToAction("Index", "Home");
+                    if (model.ReturnTo == null) {
+                        return RedirectToAction("Index", "Home");
+                    }
+                    else {
+                        return Redirect(model.ReturnTo);
+                    }
                 }
                 else
                 {
@@ -201,7 +157,7 @@ namespace DugoutDigits.Controllers {
 
                     // Set the appropriate cookies
                     FormsAuthentication.SetAuthCookie(model.Email, false /* createPersistentCookie */);
-                    HttpCookie cookie = new HttpCookie("DD_name", model.FirstName + " " + model.LastName);
+                    HttpCookie cookie = new HttpCookie(AppConstants.COOKIE_NAME, model.FirstName + " " + model.LastName);
                     cookie.Expires = DateTime.Now.AddDays(1000);
                     this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
                 }

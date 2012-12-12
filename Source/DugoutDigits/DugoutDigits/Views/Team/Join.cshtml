@@ -1,0 +1,31 @@
+﻿@{
+    ViewBag.Title = "Join";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div id="leftColA">
+    <div class="columnContent">
+        <div id="account-summary-info">
+            <h3>Account Summary</h3>
+            <p>@ViewBag.FirstName @ViewBag.LastName</p>
+            <img src="@ViewBag.ImageURL" alt="profile image" />
+        </div>
+        <div id="sidebar-teamlist">
+            <h3>My Teams</h3>
+            <div id="sidebar-teamlist-content"></div>
+        </div>
+    </div>
+</div>
+
+<div id="rightColA">
+    <div class="columnContent">
+        <div id="inner-content">
+            <p>You have been added as a member of @ViewBag.TeamName, enjoy the season!</p>
+        </div>
+    </div>
+</div>
+
+<div class="clear"></div>
+
+<!-- Include necesary scripts at the bottom of the page. -->
+<script type="text/javascript" src="../../Scripts/team.js"></script>
