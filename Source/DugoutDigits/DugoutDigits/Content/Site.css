@@ -352,6 +352,20 @@ table th {
     margin-right: -10px;
 }
 
+/* FEEDBACK
+----------------------------------------------------------*/
+#submit-feedback {
+    position: fixed;
+    bottom: 0;
+    right: 40px;
+    height: 40px;
+    width: 150px;
+    background-color: #FFFFFF;
+    border-top: 2px solid black;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+}
+
 /* MISC  
 ----------------------------------------------------------*/
 .clear {

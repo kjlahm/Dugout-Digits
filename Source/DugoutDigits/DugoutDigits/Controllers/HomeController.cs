@@ -7,6 +7,8 @@ using DugoutDigits.Utilities;
 using DugoutDigits.Objects;
 using System.Web.Security;
 using DugoutDigits.Models;
+using System.Net.Mail;
+using System.Net;
 
 namespace DugoutDigits.Controllers
 {
@@ -79,6 +81,50 @@ namespace DugoutDigits.Controllers
 
             return Json(
                 new { message = "Thanks for sending info" },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        public ActionResult AJAX_SubmitFeedback(string message) {
+            string successMessage = "Thanks for your feedback.";
+
+            if (Request.IsAuthenticated) {
+                if (message != null && !message.Equals("")) {
+                    try {
+                        // Form an email
+                        MailMessage newMessage = new MailMessage();
+                        SmtpClient mailService = new SmtpClient();
+
+                        //set the addresses
+                        newMessage.From = new MailAddress(User.Identity.Name);
+                        newMessage.To.Add(AppConstants.EMAIL_FEEDBACK);
+
+                        //set the content
+                        newMessage.Subject = "Dugout Digits Site Feedback";
+                        newMessage.Body = message;
+
+                        //send the message
+                        mailService.UseDefaultCredentials = false;
+                        mailService.DeliveryMethod = SmtpDeliveryMethod.Network;
+                        mailService.Host = AppConstants.EMAIL_SMTP_ADDRESS;
+                        mailService.Credentials = new NetworkCredential(AppConstants.EMAIL_SMTP_USERNAME, AppConstants.EMAIL_SMTP_PASSWORD);
+                        mailService.Send(newMessage);
+                    }
+                    catch (Exception) {
+                        successMessage = "Error submitting feedback.";
+                    }
+                }
+                else {
+                    successMessage = "The given message is null or empty.";
+                }
+            }
+            else {
+                successMessage = "Request not authenticated.";
+            }
+
+            // Return the success message of the addition
+            return Json(
+                new { message = successMessage },
                 JsonRequestBehavior.AllowGet
             );
         }
