@@ -316,6 +316,42 @@ table th {
     border: solid 1px #e8eef4;
 }
 
+/* LIGHTBOX
+----------------------------------------------------------*/
+.lightbox-black {
+    display: none;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index:1001;
+    -moz-opacity: 0.8;
+    opacity:.80;
+    filter: alpha(opacity=80);
+}
+
+.lightbox-content {
+    display: none;
+    position: absolute;
+    min-width: 100px;
+    max-width: 250px;
+    left: 40%;
+    top: 20%;
+    padding: 10px 16px;
+    border: 10px solid #B9E0A5;
+    background-color: white;
+    z-index:1002;
+    overflow: auto;
+}
+
+.lightbox-content-close {
+    float: right;
+    margin-top: -8px;
+    margin-right: -10px;
+}
+
 /* MISC  
 ----------------------------------------------------------*/
 .clear {
@@ -375,6 +411,15 @@ div#title {
 
 .submit-button:hover {
     background-color: #BBBBBB;
+}
+
+.request-action-image {
+    margin-right: 5px;
+}
+
+.request-action-text {
+    margin-top: -5px;
+    display: inline-table;
 }
 
 /* Styles for validation helpers

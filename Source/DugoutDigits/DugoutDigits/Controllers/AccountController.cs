@@ -27,7 +27,6 @@ namespace DugoutDigits.Controllers {
             if (ModelState.IsValid) {
 
                 // This should be a DB check instead of Membership.ValidateUser
-                //if (Membership.ValidateUser(model.Email, model.Password)) {
                 DBAccessor dba = new DBAccessor();
                 String result = dba.CheckLoginCredentials(model.Email, model.Password);
 

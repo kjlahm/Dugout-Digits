@@ -380,8 +380,8 @@ namespace DugoutDigits.Utilities
                 tempPerson.email = dr.GetString("email");
                 tempPerson.setPassword(dr.GetString("password"));
                 //coach.imageURL = dr.GetString("imageURL");
-                tempPerson.height = dr.GetInt16("height");
-                tempPerson.weight = dr.GetInt16("weight");
+                //tempPerson.height = dr.GetInt16("height");
+                //tempPerson.weight = dr.GetInt16("weight");
 
                 returnVal = new Team(dr.GetString("name"), tempPerson);
                 returnVal.ID = id;
@@ -557,6 +557,46 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
+        /// Gets the players on the team with the given team ID.
+        /// </summary>
+        /// <param name="teamID">The team ID of the team in question.</param>
+        /// <returns>A list of players on the given team.</returns>
+        public List<Person> GetTeamPlayers(long teamID) {
+            List<Person> players = new List<Person>();
+            MySqlDataReader dr = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_TEAMPERSON + " link JOIN " + AppConstants.MYSQL_TABLE_PERSON + " person ";
+            query += "ON link.personID = person.personID ";
+            query += "WHERE teamID = " + teamID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                Person tempPlayer;
+                while (dr.Read()) {
+                    tempPlayer = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    tempPlayer.email = dr.GetString("email");
+                    tempPlayer.ID = (long)dr.GetUInt64("personID");
+                    //tempPlayer.imageURL = dr.GetString("imageURL");
+                    //tempPlayer.height = dr.GetUInt16("height");
+                    //tempPlayer.weight = dr.GetUInt16("weight");
+                    players.Add(tempPlayer);
+                }
+            }
+            catch {
+                players = null;
+            }
+            finally {
+                connection.Close();
+            }
+
+            return players;
+        }
+
+        /// <summary>
         /// Adds a request entry to the requests table.
         /// </summary>
         /// <param name="requesteeEmail">The email of the person requesting to join the team.</param>
@@ -566,8 +606,29 @@ namespace DugoutDigits.Utilities
             // Get the assocated coach ID for the given team ID
             long coachID = GetCoachID(teamID);
 
+            // Check for a current request in the system
+            MySqlDataReader dr = null;
+            String query = "SELECT requestID FROM ";
+            query += AppConstants.MYSQL_TABLE_REQUESTS;
+            query += " WHERE personID = " + requesteeID + " AND teamID = " + teamID + " AND coachID = " + coachID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                connection.Close();
+
+                // If an entry is found a request is already pending, return true.
+                if (dr.HasRows) {
+                    return true;
+                }
+            }
+            catch {
+                connection.Close();
+            }
+
             // Add the entry to the DB
-            String query = "INSERT INTO ";
+            query = "INSERT INTO ";
             query += AppConstants.MYSQL_TABLE_REQUESTS;
             query += " (personID, teamID, coachID) VALUES (";
             query += "'" + requesteeID + "', ";
@@ -593,7 +654,23 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
-        /// Gets the details of a sinlge request matching the given request ID.
+        /// Removes an invite entry from the database if the invite ID 
+        /// and invitee email are found in the database.
+        /// </summary>
+        /// <param name="inviteeEmail">The email of the person invited to join a team.</param>
+        /// <param name="inviteID">The ID of the invite.</param>
+        /// <returns>Success of the removal.</returns>
+        public bool RemoveInvite(string inviteeEmail, long inviteID) {
+            // Add the entry to the DB
+            String query = "DELETE FROM ";
+            query += AppConstants.MYSQL_TABLE_INVITES;
+            query += " WHERE inviteID=" + inviteID;
+            query += " AND invitee='" + inviteeEmail + "'";
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Gets the details of a single request matching the given request ID.
         /// </summary>
         /// <param name="requestID">The request ID to search for.</param>
         /// <returns>The details matching the request ID.</returns>
@@ -601,9 +678,9 @@ namespace DugoutDigits.Utilities
             Request returnVal = null;
             MySqlDataReader dr = null;
 
-            String query = "SELECT personID, teamID, name, firstName, lastName FROM ";
-            query += AppConstants.MYSQL_TABLE_PERSON + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_TEAM + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_REQUESTS;
-            query += " WHERE requestID=" + requestID;
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+            query += "WHERE person.personID=request.personID AND team.teamID=request.teamID AND request.requestID=" + requestID;
 
             try {
                 connection.Open();
@@ -612,15 +689,21 @@ namespace DugoutDigits.Utilities
 
                 Person requestee;
                 Team team;
-                while (dr.Read()) {
-                    requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
-                    requestee.ID = dr.GetInt64("personID");
-                    team = new Team();
-                    team.ID = dr.GetInt64("teamID");
-                    team.name = dr.GetString("name");
-                    returnVal = new Request(requestee, team);
-                    returnVal.ID = requestID;
-                }
+                dr.Read();
+                requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                requestee.ID = dr.GetInt64("personID");
+                requestee.email = dr.GetString("email");
+                //requestee.imageURL = dr.GetString("imageURL");
+                //requestee.height = dr.GetInt16("height");
+                //requestee.weight = dr.GetInt16("weight");
+                //requestee.birthday = dr.GetDateTime("birthday");
+
+                team = new Team();
+                team.ID = dr.GetInt64("teamID");
+                team.name = dr.GetString("name");
+                
+                returnVal = new Request(requestee, team);
+                returnVal.ID = requestID;
             } catch (Exception ex) {
                 returnVal = null;
             } finally {
@@ -631,8 +714,8 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
-        /// Gets the invites from the database that are connected to the teams 
-        /// the given user is a coaches.
+        /// Gets the requests from the database that are connected to the teams 
+        /// the given user coaches.
         /// </summary>
         /// <param name="email">The email address of the coach.</param>
         /// <returns>A list of invites corresponding to the coaches' teams.</returns>
@@ -643,8 +726,8 @@ namespace DugoutDigits.Utilities
             Person coach = GetPersonInformation(email);
 
             String query = "SELECT * FROM ";
-            query += AppConstants.MYSQL_TABLE_PERSON + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_TEAM + " NATURAL JOIN " + AppConstants.MYSQL_TABLE_REQUESTS;
-            query += " WHERE coachID='" + coach.ID + "'";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+            query += "WHERE person.personID=request.personID AND team.teamID=request.teamID AND request.coachID=" + coach.ID;
 
             try {
                 connection.Open();
@@ -659,7 +742,7 @@ namespace DugoutDigits.Utilities
                     requestee.ID = dr.GetInt64("personID");
                     requestee.email = dr.GetString("email");
                     //requestee.setPassword(dr.GetString("password"));
-                    requestee.imageURL = dr.GetString("imageURL");
+                    //requestee.imageURL = dr.GetString("imageURL");
                     //requestee.birthday = dr.GetDateTime("birthday");
                     //requestee.height = dr.GetInt16("height");
                     //requestee.weight = dr.GetInt16("weight");
@@ -675,6 +758,151 @@ namespace DugoutDigits.Utilities
             } catch (Exception ex) {
                 returnVal = null;
             } finally {
+                connection.Close();
+            }
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Gets requests tied to a specific user and team ID.
+        /// </summary>
+        /// <param name="teamID">The ID of the team.</param>
+        /// <param name="userID">The ID of the requestee.</param>
+        /// <returns>A list of requests matching the given team and requestee ID.</returns>
+        public List<Request> GetRequests(long teamID, long userID) {
+            List<Request> returnVal = new List<Request>();
+            MySqlDataReader dr = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+            query += "WHERE person.personID=request.personID AND team.teamID=request.teamID AND request.teamID=" + teamID + " AND request.personID=" + userID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                Person requestee;
+                Team team;
+                Request request;
+                while (dr.Read()) {
+                    requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    requestee.ID = dr.GetInt64("personID");
+                    requestee.email = dr.GetString("email");
+                    //requestee.setPassword(dr.GetString("password"));
+                    //requestee.imageURL = dr.GetString("imageURL");
+                    //requestee.birthday = dr.GetDateTime("birthday");
+                    //requestee.height = dr.GetInt16("height");
+                    //requestee.weight = dr.GetInt16("weight");
+
+                    team = new Team();
+                    team.name = dr.GetString("name");
+
+                    request = new Request(requestee, team);
+                    request.ID = dr.GetInt64("requestID");
+                    returnVal.Add(request);
+                }
+            }
+            catch (Exception ex) {
+                returnVal = null;
+            }
+            finally {
+                connection.Close();
+            }
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Gets the details of a single invitation matching the given invitation ID.
+        /// </summary>
+        /// <param name="inviteID">The invite ID to search for.</param>
+        /// <returns>The details matching the invite ID.</returns>
+        public Invitation GetInvite(long inviteID) {
+            Invitation returnVal = null;
+            MySqlDataReader dr = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_INVITES + " invite ";
+            query += "WHERE person.personID=invite.personID AND team.teamID=invite.teamID AND invite.inviteID=" + inviteID;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                Person invitor;
+                Team team;
+                dr.Read();
+                invitor = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                invitor.ID = dr.GetInt64("personID");
+                invitor.email = dr.GetString("email");
+                //invitor.imageURL = dr.GetString("imageURL");
+                //invitor.height = dr.GetInt16("height");
+                //invitor.weight = dr.GetInt16("weight");
+                //invitor.birthday = dr.GetDateTime("birthday");
+
+                team = new Team();
+                team.ID = dr.GetInt64("teamID");
+                team.name = dr.GetString("name");
+                team.coach = invitor;
+
+                returnVal = new Invitation(inviteID, team);
+            }
+            catch (Exception ex) {
+                returnVal = null;
+            }
+            finally {
+                connection.Close();
+            }
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Gets the invitations extended to the user with the given email.
+        /// </summary>
+        /// <param name="email">Email of the user of interest.</param>
+        /// <returns>A list of invitations to the user with the given email.</returns>
+        public List<Invitation> GetInvitations(String email) {
+            List<Invitation> returnVal = new List<Invitation>();
+            MySqlDataReader dr = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_INVITES + " invite ";
+            query += "WHERE person.personID=invite.personID AND team.teamID=invite.teamID AND invite.invitee='" + email + "'";
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                Person invitor;
+                Team team;
+                Invitation invitation;
+                while (dr.Read()) {
+                    invitor = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    invitor.ID = dr.GetInt64("personID");
+                    invitor.email = dr.GetString("email");
+                    //invitor.setPassword(dr.GetString("password"));
+                    //invitor.imageURL = dr.GetString("imageURL");
+                    //invitor.birthday = dr.GetDateTime("birthday");
+                    //invitor.height = dr.GetInt16("height");
+                    //invitor.weight = dr.GetInt16("weight");
+
+                    team = new Team();
+                    team.name = dr.GetString("name");
+                    team.coach = invitor;
+
+                    invitation = new Invitation(dr.GetInt64("inviteID"), team);
+                    returnVal.Add(invitation);
+                }
+            }
+            catch (Exception) {
+                returnVal = null;
+            }
+            finally {
                 connection.Close();
             }
 

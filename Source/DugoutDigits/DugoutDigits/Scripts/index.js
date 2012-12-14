@@ -1,5 +1,16 @@
-﻿function render_myteams() {
-    $('#inner-content').html("<div id='team-tables'></div><div id='team-requests'></div>");
+﻿var refreshRequestsIntervalID = 0;
+var refreshInvitesIntervalID = 1;
+
+function render_myteams() {
+    $('#inner-content').html("<div id='team-tables'></div><div id='team-requests'></div><div id='requestresponse'></div><div id='team-invites'></div><div id='inviteresponse'></div>");
+    load_myteams();
+    load_myrequests();
+    load_myinvites();
+    refreshRequestsIntervalID = setInterval('load_myrequests()', 10000);
+    refreshInvitesIntervalID = setInterval('load_myinvites()', 10000);
+}
+
+function load_myteams() {
     $.ajax({
         url: "Team/AJAX_GetTeamsTable",
         success: function (data) {
@@ -9,11 +20,25 @@
             alert("error making get teams table call");
         }
     });
+}
 
+function load_myrequests() {
     $.ajax({
         url: "Team/AJAX_GetRequestTable",
         success: function (data) {
             $('#team-requests').html(data.message);
+        },
+        error: function () {
+            alert("error making get requests table call");
+        }
+    });
+}
+
+function load_myinvites() {
+    $.ajax({
+        url: "Team/AJAX_GetInviteTable",
+        success: function (data) {
+            $('#team-invites').html(data.message);
         },
         error: function () {
             alert("error making get requests table call");
@@ -27,7 +52,7 @@ function render_searchteams() {
     returnVal += "<form>\n<h4>Team Name</h4>\n";
     returnVal += "<input type='text' name='search-team-name' onkeypress='formsubmithandler(event, \"search\")' />\n";
     returnVal += "<div class='submit-button' onClick='action_searchteams()'>Search</div>\n</form>\n";
-    returnVal += "<div id='searchteams-success-message'></div>";
+    returnVal += "<div id='searchteams-success-message'></div><div id='searchteams-request-message'></div>";
     return returnVal;
 }
 
@@ -149,7 +174,7 @@ function action_requestjoin(teamID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            alert(data.message);
+            $('#searchteams-request-message').html(data.message);
         },
         error: function () {
             alert(data.message);
@@ -166,8 +191,9 @@ function action_acceptrequest(requestID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            alert(data.message);
+            $('#requestresponse').html(data.message);
             render_myteams();
+            action_hidedetails();
         },
         error: function () {
             alert(data.message);
@@ -184,8 +210,9 @@ function action_declinerequest(requestID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            alert(data.message);
+            $('#requestresponse').html(data.message);
             render_myteams();
+            action_hidedetails();
         },
         error: function () {
             alert(data.message);
@@ -193,7 +220,93 @@ function action_declinerequest(requestID) {
     });
 }
 
+function action_detailsrequest(requestID) {
+    var p = { "requestID": requestID };
+
+    /* make the call to the remove request web service */
+    $.ajax({
+        url: "Team/AJAX_GetRequest",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            $('#lightbox-content-index').html(data.message);
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+
+    $('#lightbox-black-index').css("display", "block");
+    $('#lightbox-content-index').css("display", "block");
+}
+
+function action_acceptinvite(inviteID) {
+    var p = { "inviteID": inviteID };
+
+    /* make the call to the accept invite web service */
+    $.ajax({
+        url: "Team/AJAX_AcceptInvite",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            $('#inviteresponse').html(data.message);
+            render_myteams();
+            action_hidedetails();
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+}
+
+function action_declineinvite(inviteID) {
+    var p = { "inviteID": inviteID };
+
+    /* make the call to the remove invite web service */
+    $.ajax({
+        url: "Team/AJAX_RemoveInvite",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            $('#inviteresponse').html(data.message);
+            render_myteams();
+            action_hidedetails();
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+}
+
+function action_detailsinvite(inviteID) {
+    var p = { "inviteID": inviteID };
+
+    /* make the call to the invite details web service */
+    $.ajax({
+        url: "Team/AJAX_GetInvite",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            $('#lightbox-content-index').html(data.message);
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+
+    $('#lightbox-black-index').css("display", "block");
+    $('#lightbox-content-index').css("display", "block");
+}
+
+function action_hidedetails() {
+    $('#lightbox-black-index').css("display", "none");
+    $('#lightbox-content-index').css("display", "none");
+    $('#lightbox-content-index').html("");
+}
+
 function submenu_handler(itemClicked) {
+    clearInterval(refreshRequestsIntervalID);
+    clearInterval(refreshInvitesIntervalID);
     submenu_clearClasses();
     $("#"+itemClicked).removeClass("inactive-subtab").addClass("active-subtab");
     switch (itemClicked) {
