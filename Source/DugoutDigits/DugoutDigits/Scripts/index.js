@@ -1,13 +1,37 @@
 ﻿var refreshRequestsIntervalID = 0;
 var refreshInvitesIntervalID = 1;
+var refreshOpenRequestsIntervalID = 2;
+var refreshOpenInvitesIntervalID = 2;
 
 function render_myteams() {
-    $('#inner-content').html("<div id='team-tables'></div><div id='team-requests'></div><div id='requestresponse'></div><div id='team-invites'></div><div id='inviteresponse'></div>");
+    var myteamsHTML = "<div id='team-tables' class='tileContent'></div>\n";
+
+    myteamsHTML += "<div class='leftColB'>\n";
+    myteamsHTML += "<div id='team-openrequests' class='tileContent'></div><div id='openrequestresponse' class='tileContent'></div>";
+    myteamsHTML += "</div>\n";
+    myteamsHTML += "<div class='rightColB'>\n";
+    myteamsHTML += "<div id='team-invites' class='tileContent'></div><div id='inviteresponse' class='tileContent'></div>";
+    myteamsHTML += "</div>\n";
+    myteamsHTML += "<div class='clear'></div>";
+
+    myteamsHTML += "<div class='leftColB'>\n";
+    myteamsHTML += "<div id='team-requests' class='tileContent'></div><div id='requestresponse' class='tileContent'></div>";
+    myteamsHTML += "</div>\n";
+    myteamsHTML += "<div class='rightColB'>\n";
+    myteamsHTML += "<div id='team-openinvites' class='tileContent'></div><div id='openinviteresponse' class='tileContent'></div>";
+    myteamsHTML += "</div>\n";
+    myteamsHTML += "<div class='clear'></div>";
+
+    $('#inner-content').html(myteamsHTML);
     load_myteams();
     load_myrequests();
     load_myinvites();
+    load_myopenrequests();
+    load_myopeninvites();
     refreshRequestsIntervalID = setInterval('load_myrequests()', 10000);
     refreshInvitesIntervalID = setInterval('load_myinvites()', 10000);
+    refreshOpenRequestsIntervalID = setInterval('load_myopenrequests()', 10000);
+    refreshOpenInvitesIntervalID = setInterval('load_myopeninvites()', 10000);
 }
 
 function load_myteams() {
@@ -46,6 +70,30 @@ function load_myinvites() {
     });
 }
 
+function load_myopenrequests() {
+    $.ajax({
+        url: "Team/AJAX_GetOpenRequestTable",
+        success: function (data) {
+            $('#team-openrequests').html(data.message);
+        },
+        error: function () {
+            alert("error making get requests table call");
+        }
+    });
+}
+
+function load_myopeninvites() {
+    $.ajax({
+        url: "Team/AJAX_GetOpenInviteTable",
+        success: function (data) {
+            $('#team-openinvites').html(data.message);
+        },
+        error: function () {
+            alert("error making get requests table call");
+        }
+    });
+}
+
 function render_searchteams() {
     var returnVal = "<h3>Search For a Team</h3>\n";
     returnVal += "<p>Use the form to search for a team by name.</p>\n";
@@ -77,7 +125,8 @@ function render_inviteuser() {
         success: function (data) {
             var returnVal = "<h3>Invite Your Team</h3>\n";
             returnVal += "<p>Send invites to your team using the form below. When players create an account with Dugout ";
-            returnVal += "Digits they will be able to COMPLETE THIS INFORMATION LATER.</p>\n";
+            returnVal += "Digits they will be able to receive messages from you about game and practice information as ";
+            returnVal += "well as browse through your team's data including season stats and game scorecards.</p>\n";
             returnVal += "<form>\n<h4>Email</h4>\n";
             returnVal += "<input type='text' name='invite-email' />\n";
             returnVal += "<h4>Message</h4>\n";
@@ -142,6 +191,38 @@ function action_addteam() {
             alert("error making add team call");
         }
     });
+}
+
+function action_removeteam(teamID) {
+    /* put the teamID in an array to send to the server */
+    var p = { "teamID": teamID };
+
+    /* make the call to the add team web service */
+    $.ajax({
+        url: "Team/AJAX_RemoveTeam",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            sidebar_listTeams();
+            load_myteams();
+        },
+        error: function () {
+            alert("error making remove team call");
+        }
+    });
+
+    action_hidedetails();
+}
+
+function action_detailsremoveteam(teamID) {
+    var lightboxText = "<div class='lightbox-content-close clickable-text' onClick='action_hidedetails()'>Close</div>\n";
+    lightboxText += "<h3>Are you sure?</h3>\n";
+    lightboxText += "<p>I know confirmation prompts are annoying but this action cannot be undone.</p>\n";
+    lightboxText += "<div class='submit-button' onClick='action_removeteam(" + teamID + ")'>Remove</div>\n";
+
+    $('#lightbox-content-index').html(lightboxText);
+    $('#lightbox-black-index').css("display", "block");
+    $('#lightbox-content-index').css("display", "block");
 }
 
 function action_inviteuser() {
@@ -240,6 +321,24 @@ function action_detailsrequest(requestID) {
     $('#lightbox-content-index').css("display", "block");
 }
 
+function action_removerequest(requestID) {
+    var p = { "requestID": requestID };
+
+    /* make the call to the remove request web service */
+    $.ajax({
+        url: "Team/AJAX_RemoveRequest",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            /* RERENDER TABLE HERE */
+            load_myopenrequests();
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+}
+
 function action_acceptinvite(inviteID) {
     var p = { "inviteID": inviteID };
 
@@ -298,6 +397,24 @@ function action_detailsinvite(inviteID) {
     $('#lightbox-content-index').css("display", "block");
 }
 
+function action_removeinvite(inviteID) {
+    var p = { "inviteID": inviteID };
+
+    /* make the call to the remove invite web service */
+    $.ajax({
+        url: "Team/AJAX_RemoveInvite",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            /* RERENDER TABLE HERE */
+            load_myopeninvites();
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+}
+
 function action_hidedetails() {
     $('#lightbox-black-index').css("display", "none");
     $('#lightbox-content-index').css("display", "none");
@@ -307,6 +424,8 @@ function action_hidedetails() {
 function submenu_handler(itemClicked) {
     clearInterval(refreshRequestsIntervalID);
     clearInterval(refreshInvitesIntervalID);
+    clearInterval(refreshOpenRequestsIntervalID);
+    clearInterval(refreshOpenInvitesIntervalID);
     submenu_clearClasses();
     $("#"+itemClicked).removeClass("inactive-subtab").addClass("active-subtab");
     switch (itemClicked) {

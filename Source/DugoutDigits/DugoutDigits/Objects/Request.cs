@@ -8,6 +8,7 @@ namespace DugoutDigits.Objects {
         public Person requestee { get; set; }
         public Team team { get; set; }
         public long ID { get; set; }
+        public DateTime timestamp { get; set; }
 
         public Request(Person newRequestee, Team newTeam) {
             requestee = newRequestee;

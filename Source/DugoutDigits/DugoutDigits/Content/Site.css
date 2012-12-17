@@ -162,20 +162,34 @@ footer,
     padding: 0 5px 0;
 }
 
+.tileContent {
+    margin: 5px;
+}
+
 .clear {
     clear: both;
     height: 0px;
     overflow: hidden;
 }
 
-#leftColA {
+.leftColA {
     float: left;
-    width: 30%;
+    width: 25%;
 }
 
-#rightColA {
+.rightColA {
     float: right;
-    width: 70%;
+    width: 75%;
+}
+
+.leftColB {
+    float: left;
+    width: 50%;
+}
+
+.rightColB {
+    float: right;
+    width: 50%;
 }
 
 /* TAB MENU   
@@ -262,7 +276,7 @@ ul#menu li.selected a {
 
 fieldset {
     border: 1px solid #ddd;
-    padding: 0 1.4em 1.4em 1.4em;
+    padding: 0 1em 1em 1em;
     margin: 0 0 1.5em 0;
 }
 
@@ -281,7 +295,7 @@ input[type="password"] {
     padding: 2px;
     font-size: 1.2em;
     color: #444;
-    width: 200px;
+    width: 180px;
 }
 
 select {
@@ -350,6 +364,12 @@ table th {
     float: right;
     margin-top: -8px;
     margin-right: -10px;
+}
+
+/* Styles for the clickable text tidbits throughout the site
+----------------------------------------------------------*/
+.clickable-text {
+    text-decoration: underline;
 }
 
 /* FEEDBACK
@@ -464,7 +484,7 @@ div#title {
 ----------------------------------------------------------*/
 .display-label, 
 .editor-label {
-    margin: 1em 0 0 0;
+    margin: 0.5em 0 0 0;
 }
 
 .display-field, 
@@ -482,4 +502,10 @@ div#title {
 
 .tri-state {
     width: 6em;
+}
+
+/* Shit that's needed to apise IE
+----------------------------------------------------------*/
+a, img {
+    border:none;
 }

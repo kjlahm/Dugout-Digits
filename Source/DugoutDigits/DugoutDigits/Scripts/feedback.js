@@ -1,7 +1,8 @@
 function show_feedback_form() {
-    var formHTML = "<h3>Feedback Message</h3>\n";
+    var formHTML = "<div class='lightbox-content-close clickable-text' onClick='hide_feedback_form()'>Close</div>\n";
+    formHTML += "<h3>Feedback Message</h3>\n";
     formHTML += "<textarea id='feedback-message' rows='10' cols='27'></textarea>\n";
-    formHTML += "<div onClick='submit_feedback()'>Submit</div>\n";
+    formHTML += "<div class='submit-button' onClick='submit_feedback()'>Submit</div>\n";
     $('#lightbox-content-feedback').html(formHTML);
     $('#lightbox-black-feedback').css("display", "block");
     $('#lightbox-content-feedback').css("display", "block");

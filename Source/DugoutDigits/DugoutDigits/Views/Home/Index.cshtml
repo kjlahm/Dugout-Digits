@@ -5,7 +5,7 @@
     ViewBag.Title = "Home Page";
 }
 
-<div id="leftColA">
+<div class="leftColA">
     <div class="columnContent">
         @if (Request.IsAuthenticated) {
             <div id="account-summary-info">
@@ -61,7 +61,7 @@
     </div>
 </div>
 
-<div id="rightColA">
+<div class="rightColA">
     <div class="columnContent">
         @if (Request.IsAuthenticated) {
             <div id="subtabs">
@@ -79,7 +79,12 @@
             <div id="inner-content"></div>
         }
         else {
-            <p>This is the right column. It has some information about the site.</p>
+            <p>
+                Welcome to Dugout Digits. The site is currently under construction (notice the annoying 
+                construction gif below). Once the site is up and running it will provide you with a  
+                portal to manage a baseball team, from team communication to game scorecards.
+            </p>
+            <img src="../../Content/images/Under20costruction104-1.gif" />
         }
     </div>
 </div>

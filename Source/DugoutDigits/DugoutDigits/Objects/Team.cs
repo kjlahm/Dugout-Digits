@@ -14,32 +14,36 @@ namespace DugoutDigits.Objects
         public short wins { get; set; }   // The number of wins the team has.
         public short loses { get; set; }   // The number of loses the team has.
         public short ties { get; set; }   // The number of ties the team has.
-        public Person coach { get; set; }   // The coach of the team.
+        public List<Person> coaches { get; set; }   // The coach of the team.
         public long ID { get; set; }    // The ID of the team as found in the DB.
 
         private List<Person> players;   // The players on the team.
 
-        public Team(String newName, Person newCoach)
+        public string CoachesDisplay {
+            get {
+                string coachList = "";
+                if (coaches.Any()) {
+                    coachList += coaches[0].firstName + " " + coaches[0].lastName;
+                    for (int i = 1; i < coaches.Count; i++) {
+                        coachList += ", " + coaches[i].firstName + " " + coaches[i].lastName;
+                    }
+                }
+                return coachList;
+            }
+        }
+
+        public Team(String newName, List<Person> newCoaches)
         {
             name = newName;
             ID = 0;
-            coach = newCoach;
+            coaches = newCoaches;
             wins = 0;
             loses = 0;
             ties = 0;
             players = new List<Person>();
         }
 
-        public Team() : this("default team name", new Person()) { }
-
-        /// <summary>
-        /// Adds the given player to the team's list of players.
-        /// </summary>
-        /// <param name="newPlayer">The new player to be added to the team.</param>
-        public void addPlayer(Person newPlayer)
-        {
-            players.Add(newPlayer);
-        }
+        public Team() : this("default team name", new List<Person>()) { }
 
         /// <summary>
         /// Returns the number of players on the team.

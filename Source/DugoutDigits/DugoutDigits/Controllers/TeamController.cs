@@ -58,7 +58,7 @@ namespace DugoutDigits.Controllers
             // Create ul to hold the team names
             string result = "<ul>\n";
             foreach (Team team in teams) {
-                result += "<li>" + team.name + "</li>\n";
+                result += "<li><div>" + team.name + "</div></li>\n";
             }
             result += "</ul>\n";
 
@@ -122,14 +122,18 @@ namespace DugoutDigits.Controllers
                 // Create table to hold the team names
                 if (teamsCoached.Any() || teamsMember.Any()) {
                     result += "<table>\n";
-                    result += "<tr><th>Team Name</th><th>Coach's Name</th></tr>\n";
+                    result += "<tr><th>Team Name</th><th>Coached By</th><th>Remove Team</th></tr>\n";
 
                     foreach (Team team in teamsCoached) {
-                        result += "<tr><td>" + team.name + "</td><td>You</td></tr>\n";
+                        result += "<tr><td><div class='clickable-text'>" + team.name + "</div></td><td>You</td><td><div onClick='action_detailsremoveteam(" + team.ID + ")' class='clickable-text'>Remove</div></td></tr>\n";
                     }
 
                     foreach (Team team in teamsMember) {
-                        result += "<tr><td>" + team.name + "</td><td>" + team.coach.firstName + " " + team.coach.lastName + "</td></tr>\n";
+                        string coachNames = team.coaches[0].firstName + " " + team.coaches[0].lastName;
+                        for (int i = 1; i < team.coaches.Count; i++) {
+                            coachNames += ", " + team.coaches[i].firstName + " " + team.coaches[i].lastName;
+                        }
+                        result += "<tr><td><div class='clickable-text'>" + team.name + "</div></td><td>" + coachNames + "</td><td></td></tr>\n";
                     }
 
                     result += "</table>\n";
@@ -171,7 +175,7 @@ namespace DugoutDigits.Controllers
                             result += "<tr><td>" + playerName + "</td><td>" + request.team.name + "</td>";
                             result += "<td><img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptrequest(" + request.ID + ")' />";
                             result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declinerequest(" + request.ID + ")' />";
-                            result += "<div onClick='action_detailsrequest(" + request.ID + ")' class='request-action-text'>Details</div></td></tr>";
+                            result += "<div onClick='action_detailsrequest(" + request.ID + ")' class='request-action-text clickable-text'>Details</div></td></tr>";
                         }
                         result += "</table>\n";
                     }
@@ -181,6 +185,43 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "";
+                }
+            }
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Returns an HTML table of the requests that the authenticated user has initiated 
+        /// and are still open.
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult AJAX_GetOpenRequestTable() {
+            string result = "<p>Could not authenticate the request.</p>\n";
+            if (Request.IsAuthenticated) {
+
+                DBAccessor dba = new DBAccessor();
+
+                result = "<h3>Requests You've Sent</h3>\n";
+
+                // Call the database to get pending requests
+                List<Request> requests = dba.GetMyOpenRequests(User.Identity.Name);
+
+                // Form an HTML table with the retrieved information
+                if (requests.Any()) {
+                    result += "<table>\n";
+                    result += "<tr><th>Requested to Join</th><th>Sent On</th><th>Remove</th></tr>\n";
+                    foreach (Request request in requests) {
+                        result += "<tr><td>" + request.team.name + "</td><td>" + request.timestamp.ToString("m") + "</td>";
+                        result += "<td><div onClick='action_removerequest(" + request.ID + ")' class='request-action-text clickable-text'>Remove</div></td></tr>";
+                    }
+                    result += "</table>\n";
+                }
+                else {
+                    result += "<p>You have no open requests at this time.</p>\n";
                 }
             }
 
@@ -204,23 +245,66 @@ namespace DugoutDigits.Controllers
                 result = "<h3>Pending Invites</h3>\n";
 
                 // Call the database to get pending requests
-                List<Invitation> invitations = dba.GetInvitations(User.Identity.Name);
+                List<Invitation> invitations = dba.GetInvites(User.Identity.Name);
 
                 // Form an HTML table with the retrieved information
                 if (invitations.Any()) {
                     result += "<table>\n";
                     result += "<tr><th>Invitation From</th><th>Invitation to Join</th><th>Action</th></tr>\n";
                     foreach (Invitation invitation in invitations) {
-                        string playerName = invitation.team.coach.firstName + " " + invitation.team.coach.lastName;
+                        string playerName = invitation.invitor.firstName + " " + invitation.invitor.lastName;
                         result += "<tr><td>" + playerName + "</td><td>" + invitation.team.name + "</td>";
                         result += "<td><img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptinvite(" + invitation.ID + ")' />";
                         result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declineinvite(" + invitation.ID + ")' />";
-                        result += "<div onClick='action_detailsinvite(" + invitation.ID + ")' class='request-action-text'>Details</div></td></tr>";
+                        result += "<div onClick='action_detailsinvite(" + invitation.ID + ")' class='request-action-text clickable-text'>Details</div></td></tr>";
                     }
                     result += "</table>\n";
                 }
                 else {
-                    result += "<p>There are no pending Invitations at this time.</p>\n";
+                    result += "<p>There are no pending invites at this time.</p>\n";
+                }
+            }
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Returns an HTML table of the invites that the authenticated user has initiated 
+        /// and are still open.
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult AJAX_GetOpenInviteTable() {
+            string result = "<p>Could not authenticate the request.</p>\n";
+            if (Request.IsAuthenticated) {
+
+                DBAccessor dba = new DBAccessor();
+                Person user = dba.GetPersonInformation(User.Identity.Name);
+
+                if (user.permissions.coachEnabled) {
+                    result = "<h3>Invites You've Sent</h3>\n";
+
+                    // Call the database to get pending requests
+                    List<Invitation> invitations = dba.GetMyOpenInvites(User.Identity.Name);
+
+                    // Form an HTML table with the retrieved information
+                    if (invitations.Any()) {
+                        result += "<table>\n";
+                        result += "<tr><th>Invited</th><th>To Join</th><th>Sent On</th><th>Remove</th></tr>\n";
+                        foreach (Invitation invitation in invitations) {
+                            result += "<tr><td>" + invitation.invitee + "</td><td>" + invitation.team.name + "</td><td>" + invitation.timestamp.ToString("m") + "</td>";
+                            result += "<td><div onClick='action_removeinvite(" + invitation.ID + ")' class='request-action-text clickable-text'>Remove</div></td></tr>";
+                        }
+                        result += "</table>\n";
+                    }
+                    else {
+                        result += "<p>You have no open invites at this time.</p>\n";
+                    }
+                }
+                else {
+                    result = "";
                 }
             }
 
@@ -243,7 +327,7 @@ namespace DugoutDigits.Controllers
                 Request request = dba.GetRequest(requestID);
 
                 // Form the player information
-                result = "<div class='lightbox-content-close' onclick='action_hidedetails()'>Close</div>";
+                result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
                 result += "<h3>Pending Request</h3>\n";
                 result += "<div id='request-details-left'>\n<img src='" + request.requestee.imageURL + "' alt='player picture' />\n</div>\n";
                 result += "<div id='request-details-right'>\n";
@@ -274,11 +358,11 @@ namespace DugoutDigits.Controllers
                 Invitation invite = dba.GetInvite(inviteID);
 
                 // Form the player information
-                result = "<div class='lightbox-content-close' onclick='action_hidedetails()'>Close</div>";
+                result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
                 result += "<h3>Pending Invite</h3>\n";
-                result += "<div id='invite-details-left'>\n<img src='" + invite.team.coach.imageURL + "' alt='coach picture' />\n</div>\n";
+                result += "<div id='invite-details-left'>\n<img src='" + invite.invitor.imageURL + "' alt='coach picture' />\n</div>\n";
                 result += "<div id='invite-details-right'>\n";
-                result += "<p>Invited by " + invite.team.coach.firstName + " " + invite.team.coach.lastName + "</p>\n";
+                result += "<p>Invited by " + invite.invitor.firstName + " " + invite.invitor.lastName + "</p>\n";
                 result += "<p>Invitation to join the " + invite.team.name + "</p>\n";
                 result += "<img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptinvite(" + invite.ID + ")' />";
                 result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declineinvite(" + invite.ID + ")' />";
@@ -301,14 +385,45 @@ namespace DugoutDigits.Controllers
             string result = "Request not authenticated.";
             if (Request.IsAuthenticated) {
 
-                // Get the person id for the user currently logged in
-                DBAccessor dba = new DBAccessor();
-                long coachID = dba.GetPersonID(User.Identity.Name);
+                if (teamName != null && !teamName.Equals("")) {
 
-                // Add the team to the database
-                result = "Error adding the team.";
-                if (dba.AddNewTeam(teamName, coachID)) {
-                    result = teamName + " successfully added.";
+                    // Get the person id for the user currently logged in
+                    DBAccessor dba = new DBAccessor();
+                    long coachID = dba.GetPersonID(User.Identity.Name);
+
+                    // Add the team to the database
+                    result = "Error adding the team.";
+                    if (dba.AddNewTeam(teamName, coachID)) {
+                        result = teamName + " successfully added.";
+                    }
+                }
+                else {
+                    result = "Please enter a name for the new team.";
+                }
+            }
+
+            // Return the success message of the addition
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Removes a team from the database with the matching teamID.
+        /// </summary>
+        /// <param name="teamID">The ID of the team to remove from the database.</param>
+        /// <returns>A message telling if the removal was successful.</returns>
+        public ActionResult AJAX_RemoveTeam(long teamID) {
+            string result = "Request not authenticated.";
+
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                if (dba.RemoveTeam(teamID)) {
+                    result = "Team removed successfully.";
+                }
+                else {
+                    result = "Error removing the team from the database.";
                 }
             }
 
@@ -329,38 +444,48 @@ namespace DugoutDigits.Controllers
             string result = "Request not authenticated.";
             if (Request.IsAuthenticated) {
                 
-                // Search the DB using the DBA
-                DBAccessor dba = new DBAccessor();
-                List<Team> matchedTeams = dba.SearchTeams(teamName);
+                // Make sure a value was bound for team name
+                if (teamName != null && !teamName.Equals("")) {
 
-                if (matchedTeams != null) {
-                    if (matchedTeams.Count >= 1) {
-                        // Form an html table with the results
-                        result = "<h4>Team Matches</h4>\n";
-                        result += "<table>\n";
-                        result += "<tr><th>Team Name</th><th>Coach's Name</th><th>Request to Join</th></tr>\n";
-                        foreach (Team team in matchedTeams) {
-                            // Get the players of the team
-                            List<Person> teamMembers = dba.GetTeamPlayers(team.ID);
-                            Person user = new Person();
-                            user.email = User.Identity.Name;
+                    // Search the DB using the DBA
+                    DBAccessor dba = new DBAccessor();
+                    List<Team> matchedTeams = dba.SearchTeams(teamName);
 
-                            string coachName = team.coach.firstName + " " + team.coach.lastName;
-                            string joinCell = "<div id='RQ_" + team.ID + "' onClick='action_requestjoin(" + team.ID + ")'>Send Request</div>";
-                            if (team.coach.email.Equals(User.Identity.Name)) {
-                                coachName = "You";
-                                joinCell = "N/A";
-                            } else if (teamMembers.Contains(user, new PersonComparer())) {
-                                joinCell = "You're on the Team";
+                    if (matchedTeams != null) {
+                        if (matchedTeams.Count >= 1) {
+                            // Form an html table with the results
+                            result = "<h4>Team Matches</h4>\n";
+                            result += "<table>\n";
+                            result += "<tr><th>Team Name</th><th>Coach's Name</th><th>Request to Join</th></tr>\n";
+                            foreach (Team team in matchedTeams) {
+                                // Get the players of the team
+                                List<Person> teamMembers = dba.GetTeamPlayers(team.ID);
+                                Person user = new Person();
+                                user.email = User.Identity.Name;
+
+                                string coachName = team.CoachesDisplay;
+                                string joinCell = "<div id='RQ_" + team.ID + "' class='clickable-text' onClick='action_requestjoin(" + team.ID + ")'>Send Request</div>";
+                                if (team.coaches.Contains(user, new PersonComparer())) {
+                                    coachName = "You";
+                                    joinCell = "N/A";
+                                }
+                                else if (teamMembers.Contains(user, new PersonComparer())) {
+                                    joinCell = "You're on the Team";
+                                }
+                                result += "<tr><td>" + team.name + "</td><td>" + coachName + "</td><td>" + joinCell + "</td></tr>\n";
                             }
-                            result += "<tr><td>" + team.name + "</td><td>" + coachName + "</td><td>" + joinCell + "</td></tr>\n";
+                            result += "</table>\n";
                         }
-                        result += "</table>\n";
-                    } else {
-                        result = "No matches were found.";
+                        else {
+                            result = "No matches were found.";
+                        }
                     }
-                } else {
-                    result = "The query to the database failed.";
+                    else {
+                        result = "The query to the database failed.";
+                    }
+                }
+                else {
+                    result = "Please enter a name or part of a name to search.";
                 }
             }
 
@@ -425,7 +550,7 @@ namespace DugoutDigits.Controllers
 
                 // Remove the request to the database
                 result = "Error making the request.";
-                if (dba.RemoveRequest(requesteeID, requestID)) {
+                if (dba.RemoveRequest(requestID)) {
                     result = "Request removed.";
                 }
             }
@@ -464,7 +589,7 @@ namespace DugoutDigits.Controllers
 
                         // Remove the request entry from the database
                         long requesteeID = dba.GetPersonID(User.Identity.Name);
-                        if (dba.RemoveRequest(requesteeID, requestID)) {
+                        if (dba.RemoveRequest(requestID)) {
                             result = request.requestee.firstName + " " + request.requestee.lastName + " added to " + request.team.name + " successfully.";
                         
                         // Indicate the accept went through but the request wasn't removed
@@ -499,7 +624,7 @@ namespace DugoutDigits.Controllers
                 // Remove the request to the database
                 DBAccessor dba = new DBAccessor();
                 result = "Error making the request.";
-                if (dba.RemoveInvite(User.Identity.Name, inviteID)) {
+                if (dba.RemoveInvite(inviteID)) {
                     result = "Invitation removed.";
                 }
             }
@@ -540,7 +665,7 @@ namespace DugoutDigits.Controllers
                     if (dba.AddPlayerToTeam(userID, invite.team.ID)) {
 
                         // Remove the invite entry from the database
-                        if (dba.RemoveInvite(User.Identity.Name, inviteID)) {
+                        if (dba.RemoveInvite(inviteID)) {
                             result = "You've been added to " + invite.team.name + " successfully.";
 
                         // Indicate the accept went through but the request wasn't removed
@@ -573,39 +698,56 @@ namespace DugoutDigits.Controllers
         public ActionResult AJAX_InviteUser(string inviteEmail, string inviteMessage, long teamID) {
             string successMessage = "Message sent to " + inviteEmail;
 
-            try {
-                // Get the name of the authenticated user
-                DBAccessor dba = new DBAccessor();
-                Person user = dba.GetPersonInformation(User.Identity.Name);
-                string name = user.firstName + " " + user.lastName;
-                Team team = dba.GetTeamDetails(teamID);
+            // Make sure the request is authenticated
+            if (Request.IsAuthenticated) {
 
-                // Add the invite to the database
-                long inviteID = dba.AddInvite(inviteEmail, user.ID, teamID);
+                // Make sure the invite email is bound
+                if (inviteEmail != null && !inviteEmail.Equals("")) {
 
-                // Form an email
-                String body = "See " + name + "'s message below:\n\n" + inviteMessage;
-                body += "\n\nTo join the " + team.name + " visit http://dugoutdigits.com/Team/Join?id=" + inviteID + "&email=" + inviteEmail + " and follow the instructions.";
-                MailMessage newMessage = new MailMessage();
-                SmtpClient mailService = new SmtpClient();
+                    try {
+                        // Get the name of the authenticated user
+                        DBAccessor dba = new DBAccessor();
+                        Person user = dba.GetPersonInformation(User.Identity.Name);
+                        string name = user.firstName + " " + user.lastName;
+                        Team team = dba.GetTeamDetails(teamID);
 
-                //set the addresses
-                newMessage.From = new MailAddress(AppConstants.EMAIL_ADMIN);
-                newMessage.To.Add(inviteEmail);
+                        // Add the invite to the database
+                        long inviteID = dba.AddInvite(inviteEmail, user.ID, teamID);
 
-                //set the content
-                newMessage.Subject = name + " has invited you to join the " + team.name;
-                newMessage.Body = body;
+                        // Form an email
+                        String body = "";
+                        if (inviteMessage != null && !inviteMessage.Equals("")) {
+                            body += "See " + name + "'s message below:\n\n" + inviteMessage + "\n\n";
+                        }
+                        body += "To join the " + team.name + " visit http://dugoutdigits.com/Team/Join?id=" + inviteID + "&email=" + inviteEmail + " and follow the instructions.";
+                        MailMessage newMessage = new MailMessage();
+                        SmtpClient mailService = new SmtpClient();
 
-                //send the message
-                mailService.UseDefaultCredentials = false;
-                mailService.DeliveryMethod = SmtpDeliveryMethod.Network;
-                mailService.Host = AppConstants.EMAIL_SMTP_ADDRESS;
-                mailService.Credentials = new NetworkCredential(AppConstants.EMAIL_SMTP_USERNAME, AppConstants.EMAIL_SMTP_PASSWORD);
-                mailService.Send(newMessage);
+                        //set the addresses
+                        newMessage.From = new MailAddress(AppConstants.EMAIL_ADMIN);
+                        newMessage.To.Add(inviteEmail);
+
+                        //set the content
+                        newMessage.Subject = name + " has invited you to join the " + team.name;
+                        newMessage.Body = body;
+
+                        //send the message
+                        mailService.UseDefaultCredentials = false;
+                        mailService.DeliveryMethod = SmtpDeliveryMethod.Network;
+                        mailService.Host = AppConstants.EMAIL_SMTP_ADDRESS;
+                        mailService.Credentials = new NetworkCredential(AppConstants.EMAIL_SMTP_USERNAME, AppConstants.EMAIL_SMTP_PASSWORD);
+                        mailService.Send(newMessage);
+                    }
+                    catch (Exception) {
+                        successMessage = "Error sending email to " + inviteEmail;
+                    }
+                }
+                else {
+                    successMessage = "Please enter the email of the person you are trying to invite.";
+                }
             }
-            catch (Exception) {
-                successMessage = "Error sending email to " + inviteEmail;
+            else {
+                successMessage = "The request was not authenticated.";
             }
 
             // Return the success message of the addition
