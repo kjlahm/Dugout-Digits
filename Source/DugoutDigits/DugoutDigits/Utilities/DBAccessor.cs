@@ -7,6 +7,14 @@ using DugoutDigits.Objects;
 
 namespace DugoutDigits.Utilities
 {
+    public enum LogonResults { SUCCESS, MULTIPLE_FOUND, FAILURE, USERNOTFOUND, PASSWORDMISMATCH };
+    public class LogonResponse {
+        public int success { get; set; }
+        public Person user { get; set; }
+        public String errorMessage { get; set; }
+    }
+
+
     //http://community.discountasp.net/showthread.php?t=11948
 
     /// <summary>
@@ -143,9 +151,10 @@ namespace DugoutDigits.Utilities
         /// <param name="email">The email to look up.</param>
         /// <param name="password">The password to match to the email.</param>
         /// <returns>The resulting message after an attempted lookup.</returns>
-        public String CheckLoginCredentials(String email, String password) {
+        public LogonResponse CheckLoginCredentials(String email, String password) {
             MySqlDataReader dr = null;
-            String returnVal = "error";
+            LogonResponse response = new LogonResponse();
+            response.success = (int)LogonResults.FAILURE;
 
             String encryptedPass = PasswordEncryptor.encrypt_password(password, AppConstants.PASSWORD_KEY);
 
@@ -159,38 +168,42 @@ namespace DugoutDigits.Utilities
                 dr = command.ExecuteReader();
 
                 int resultCount = 0;
+                Person user = new Person();
                 String matchPass = "";
                 while (dr.Read()) {
-                    returnVal = dr["firstName"] + " " + dr["lastName"];
-                    matchPass = dr["password"] +"";
+                    user.firstName = dr.GetString("firstName");
+                    user.lastName = dr.GetString("lastName");
+                    matchPass = dr.GetString("password");
                     resultCount++;
                 }
 
                 if (resultCount == 1) {
                     if (matchPass.Equals(encryptedPass)) {
-                        returnVal = "success|" + returnVal;
+                        response.success = (int)LogonResults.SUCCESS;
+                        response.user = user;
                     }
                     else {
-                        returnVal = "password mismatch";
+                        response.success = (int)LogonResults.PASSWORDMISMATCH;
+                        response.errorMessage = "The password didn't match.";
                     }
                 }
                 else {
                     if (resultCount > 1) {
-                        returnVal = "multiple emails found";
+                        response.success = (int)LogonResults.MULTIPLE_FOUND;
+                        response.errorMessage = "Multiple users with that email were found.";
                     }
                     else {
-                        returnVal = "email not found";
+                        response.success = (int)LogonResults.USERNOTFOUND;
+                        response.errorMessage = "The email was not found.";
                     }
                 }
 
-            } catch (Exception ex) {
-                returnVal = ex.Message;
+            } catch {
             } finally {
-                dr.Close();
                 connection.Close();
             }
 
-            return returnVal;
+            return response;
         }
 
         /// <summary>
@@ -630,8 +643,8 @@ namespace DugoutDigits.Utilities
             query = "INSERT INTO ";
             query += AppConstants.MYSQL_TABLE_REQUESTS;
             query += " (personID, teamID) VALUES (";
-            query += "'" + requesteeID + "', ";
-            query += "'" + teamID + ")";
+            query += requesteeID + ", ";
+            query += teamID + ")";
             return ExecuteInsert(query);
         }
 
@@ -1012,6 +1025,19 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
+        /// Removes the player with the given ID from the team with the given ID.
+        /// </summary>
+        /// <param name="playerID">ID of the player to remove.</param>
+        /// <param name="teamID">ID of the team to remove them from.</param>
+        /// <returns>Success of the removal.</returns>
+        public bool RemovePlayerFromTeam(long playerID, long teamID) {
+            String query = "DELETE FROM ";
+            query += AppConstants.MYSQL_TABLE_TEAMPERSON;
+            query += " WHERE teamID=" + teamID + " AND playerID=" + playerID;
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
         /// Adds an entry to the invite database if one doesn't exist for the given 
         /// information or it gets the ID of the invite that does exist. The ID of 
         /// the associated invite is returned.
@@ -1125,6 +1151,20 @@ namespace DugoutDigits.Utilities
                 return GetTeamDetails(teamID);
             }
             return null;
+        }
+
+        /// <summary>
+        /// Adds a log entry about a request made from a user who was not validated 
+        /// to make said request.
+        /// </summary>
+        /// <param name="email">Email of the user who was authenticated when the invalid request was made.</param>
+        /// <param name="message">A brief message about the request.</param>
+        /// <returns>Success of the log entry.</returns>
+        public bool LogInvalidRequest(string email, string message) {
+            long ID = GetPersonID(email);
+            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_LOGINVALIDREQUESTS;
+            query += " (userID, message) VALUES (" + ID + ", '" + message + "')";
+            return ExecuteInsert(query);
         }
     }
 }

@@ -28,16 +28,23 @@ namespace DugoutDigits.Controllers {
 
                 // This should be a DB check instead of Membership.ValidateUser
                 DBAccessor dba = new DBAccessor();
-                String result = dba.CheckLoginCredentials(model.Email, model.Password);
+                LogonResponse result = dba.CheckLoginCredentials(model.Email, model.Password);
 
-                String[] resultSplit = result.Split('|');
-
-                if (resultSplit[0].Equals("success")) {
-
+                if (result.success == (int)LogonResults.SUCCESS) {
+                    Person user = dba.GetPersonInformation(model.Email);
                     FormsAuthentication.SetAuthCookie(model.Email, model.RememberMe);
 
                     // Add a name cookie
-                    HttpCookie cookie = new HttpCookie(AppConstants.COOKIE_NAME, resultSplit[1]);
+                    HttpCookie cookie = new HttpCookie(AppConstants.COOKIE_NAME, result.user.firstName + " " + result.user.lastName);
+                    cookie.Expires = DateTime.Now.AddDays(1000);
+                    this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
+
+                    // Add a coach permission cookie
+                    string permission = "false";
+                    if (user.permissions.coachEnabled) {
+                        permission = "true";
+                    }
+                    cookie = new HttpCookie(AppConstants.COOKIE_COACH_PERMISSION, permission);
                     cookie.Expires = DateTime.Now.AddDays(1000);
                     this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
                     
@@ -50,7 +57,7 @@ namespace DugoutDigits.Controllers {
                     }
                 }
                 else {
-                    ModelState.AddModelError("", resultSplit[0]);
+                    ModelState.AddModelError("", result.errorMessage);
                 }
             }
 
@@ -146,10 +153,9 @@ namespace DugoutDigits.Controllers {
                 // Update the user in the MySQL DB
                 String oldEmail = User.Identity.Name;
                 DBAccessor dba = new DBAccessor();
-                String result = dba.CheckLoginCredentials(oldEmail, model.Password);
-                String[] resultSplit = result.Split('|');
+                LogonResponse result = dba.CheckLoginCredentials(oldEmail, model.Password);
 
-                if (resultSplit[0].Equals("success")) {
+                if (result.success == (int)LogonResults.SUCCESS) {
 
                     Person updateUser = new Person(model.FirstName, model.LastName, model.Email, model.ImageURL, "", model.Birthday, model.Height, model.Weight);
                     dba.UpdateUserInformation(oldEmail, updateUser);
@@ -161,7 +167,7 @@ namespace DugoutDigits.Controllers {
                     this.ControllerContext.HttpContext.Response.Cookies.Add(cookie);
                 }
                 else {
-                    ModelState.AddModelError("", resultSplit[0]);
+                    ModelState.AddModelError("", result.errorMessage);
                 }
             }
 
@@ -183,10 +189,9 @@ namespace DugoutDigits.Controllers {
             if (ModelState.IsValid) {
                 String email = User.Identity.Name;
                 DBAccessor dba = new DBAccessor();
-                String result = dba.CheckLoginCredentials(email, model.OldPassword);
-                String[] resultSplit = result.Split('|');
+                LogonResponse result = dba.CheckLoginCredentials(email, model.OldPassword);
 
-                if (resultSplit[0].Equals("success")) {
+                if (result.success == (int)LogonResults.SUCCESS) {
                     if (dba.UpdateUserPassword(email, model.NewPassword)) {
                         return RedirectToAction("ChangePasswordSuccess");
                     }
@@ -195,7 +200,7 @@ namespace DugoutDigits.Controllers {
                     }
                 }
                 else {
-                    ModelState.AddModelError("", resultSplit[0]);
+                    ModelState.AddModelError("", result.errorMessage);
                 }
             }
             return View(model);

@@ -3,26 +3,46 @@ var refreshInvitesIntervalID = 1;
 var refreshOpenRequestsIntervalID = 2;
 var refreshOpenInvitesIntervalID = 2;
 
+function getCookie(c_name) {
+    var i, x, y, ARRcookies = document.cookie.split(";");
+    for (i = 0; i < ARRcookies.length; i++) {
+        x = ARRcookies[i].substr(0, ARRcookies[i].indexOf("="));
+        y = ARRcookies[i].substr(ARRcookies[i].indexOf("=") + 1);
+        x = x.replace(/^\s+|\s+$/g, "");
+        if (x == c_name) {
+            return unescape(y);
+        }
+    }
+}
+
 function render_myteams() {
-    var myteamsHTML = "<div id='team-tables' class='tileContent'></div>\n";
+    $('#inner-content').html("");
 
-    myteamsHTML += "<div class='leftColB'>\n";
-    myteamsHTML += "<div id='team-openrequests' class='tileContent'></div><div id='openrequestresponse' class='tileContent'></div>";
+    var myteamsHTML = "<div class='tileContent'><h3>My Teams</h3>";
+    myteamsHTML += "<div id='team-tables'><img src='./../Content/images/loading.gif' height='47px' width='47px' alt='loading' /></div></div>\n";
+
+    myteamsHTML += "<div class='leftColB'><h3>Requests You've Sent</h3>\n";
+    myteamsHTML += "<div id='team-openrequests' class='tileContent'>";
+    myteamsHTML += "<img src='./../Content/images/loading.gif' height='47px' width='47px' alt='loading' />";
+    myteamsHTML += "</div><div id='openrequestresponse' class='tileContent'></div>";
     myteamsHTML += "</div>\n";
-    myteamsHTML += "<div class='rightColB'>\n";
-    myteamsHTML += "<div id='team-invites' class='tileContent'></div><div id='inviteresponse' class='tileContent'></div>";
+    myteamsHTML += "<div class='rightColB'><h3>Pending Invites</h3>";
+    myteamsHTML += "<div id='team-invites' class='tileContent'><img src='./../Content/images/loading.gif' height='47px' width='47px' alt='loading' /></div><div id='inviteresponse' class='tileContent'></div>";
     myteamsHTML += "</div>\n";
     myteamsHTML += "<div class='clear'></div>";
 
-    myteamsHTML += "<div class='leftColB'>\n";
-    myteamsHTML += "<div id='team-requests' class='tileContent'></div><div id='requestresponse' class='tileContent'></div>";
-    myteamsHTML += "</div>\n";
-    myteamsHTML += "<div class='rightColB'>\n";
-    myteamsHTML += "<div id='team-openinvites' class='tileContent'></div><div id='openinviteresponse' class='tileContent'></div>";
-    myteamsHTML += "</div>\n";
-    myteamsHTML += "<div class='clear'></div>";
+    var coachEnabled = getCookie("DD_coachEnabled");
+    if (coachEnabled != null && coachEnabled == "true") {
+        myteamsHTML += "<div class='leftColB'><h3>Pending Requests</h3>";
+        myteamsHTML += "<div id='team-requests' class='tileContent'><img src='./../Content/images/loading.gif' height='47px' width='47px' alt='loading' /></div><div id='requestresponse' class='tileContent'></div>";
+        myteamsHTML += "</div>\n";
+        myteamsHTML += "<div class='rightColB'><h3>Invites You've Sent</h3>";
+        myteamsHTML += "<div id='team-openinvites' class='tileContent'><img src='./../Content/images/loading.gif' height='47px' width='47px' alt='loading' /></div><div id='openinviteresponse' class='tileContent'></div>";
+        myteamsHTML += "</div>\n";
+        myteamsHTML += "<div class='clear'></div>";
+    }
 
-    $('#inner-content').html(myteamsHTML);
+    $('#content-buffer').html(myteamsHTML);
     load_myteams();
     load_myrequests();
     load_myinvites();
@@ -32,13 +52,19 @@ function render_myteams() {
     refreshInvitesIntervalID = setInterval('load_myinvites()', 10000);
     refreshOpenRequestsIntervalID = setInterval('load_myopenrequests()', 10000);
     refreshOpenInvitesIntervalID = setInterval('load_myopeninvites()', 10000);
+
+    // Grow the content section to the right size
+    var newHeight = $('#content-buffer').height();
+    $('#inner-content').animate({ height: newHeight-30 }, 500, "linear", function () {
+        $('#inner-content').html($('#content-buffer').html()).hide().fadeIn();
+    });
 }
 
 function load_myteams() {
     $.ajax({
         url: "Team/AJAX_GetTeamsTable",
         success: function (data) {
-            $('#team-tables').html(data.message);
+            $('#team-tables').html(data.message).hide().fadeIn();
         },
         error: function () {
             alert("error making get teams table call");
@@ -95,24 +121,40 @@ function load_myopeninvites() {
 }
 
 function render_searchteams() {
+    $('#inner-content').html("");
+
     var returnVal = "<h3>Search For a Team</h3>\n";
     returnVal += "<p>Use the form to search for a team by name.</p>\n";
     returnVal += "<form>\n<h4>Team Name</h4>\n";
-    returnVal += "<input type='text' name='search-team-name' onkeypress='formsubmithandler(event, \"search\")' />\n";
+    returnVal += "<input class='editor-field' type='text' name='search-team-name' onkeypress='formsubmithandler(event, \"search\")' />\n";
     returnVal += "<div class='submit-button' onClick='action_searchteams()'>Search</div>\n</form>\n";
     returnVal += "<div id='searchteams-success-message'></div><div id='searchteams-request-message'></div>";
-    return returnVal;
+    $('#content-buffer').html(returnVal);
+
+    // Grow the content section to the right size
+    var newHeight = $('#content-buffer').height();
+    $('#inner-content').animate({ height: newHeight + 30 }, 500, "linear", function () {
+        $('#inner-content').html($('#content-buffer').html()).hide().fadeIn();
+    });
 }
 
 function render_addteam() {
+    $('#inner-content').html("");
+
     var returnVal = "<h3>Add New Team</h3>\n";
     returnVal += "<p><strong>Note:</strong> If you are not the coach, have the coach create the team. The coach can then ";
     returnVal += "invite players to join the team or players can search for and request to join the team.</p>\n";
     returnVal += "<form>\n<h4>Team Name</h4>\n";
-    returnVal += "<input type='text' name='team-name' onkeypress='formsubmithandler(event, \"add\")' />\n";
+    returnVal += "<input class='editor-field' type='text' name='team-name' onkeypress='formsubmithandler(event, \"add\")' />\n";
     returnVal += "<div class='submit-button' onClick='action_addteam()'>Add Team</div>\n</form>\n";
     returnVal += "<div id='addteam-success-message'></div>";
-    return returnVal;
+    $('#content-buffer').html(returnVal);
+
+    // Grow the content section to the right size
+    var newHeight = $('#content-buffer').height();
+    $('#inner-content').animate({ height: newHeight + 30 }, 500, "linear", function () {
+        $('#inner-content').html($('#content-buffer').html()).hide().fadeIn();
+    });
 }
 
 function render_inviteuser() {
@@ -128,14 +170,23 @@ function render_inviteuser() {
             returnVal += "Digits they will be able to receive messages from you about game and practice information as ";
             returnVal += "well as browse through your team's data including season stats and game scorecards.</p>\n";
             returnVal += "<form>\n<h4>Email</h4>\n";
-            returnVal += "<input type='text' name='invite-email' />\n";
+            returnVal += "<input class='editor-field' type='text' name='invite-email' />\n";
             returnVal += "<h4>Message</h4>\n";
-            returnVal += "<input type='text' name='invite-message' onkeypress='formsubmithandler(event, \"invite\")' />\n";
+            /*returnVal += "<input class='editor-field' type='text' name='invite-message' onkeypress='formsubmithandler(event, \"invite\")' />\n";*/
+
+            returnVal += "<textarea id='invite-message' class='editor-field' rows='10' cols='27' onkeypress='formsubmithandler(event, \"invite\")'></textarea>\n";
+
             returnVal += "<h4>Invite To Join</h4>\n";
             returnVal += data.message;
             returnVal += "<div class='submit-button' onClick='action_inviteuser()'>Send an Invite</div>\n</form>\n";
             returnVal += "<div id='inviteuser-success-message'></div>";
-            $('#innercontent-inviteuser').html(returnVal);
+            $('#content-buffer').html(returnVal);
+
+            // Grow the content section to the right size
+            var newHeight = $('#content-buffer').height();
+            $('#inner-content').animate({ height: newHeight+30 }, 500, "linear", function () {
+                $('#innercontent-inviteuser').html($('#content-buffer').html()).hide().fadeIn();
+            });
         },
         error: function () {
             $('#innercontent-inviteuser').html("<p>Error building invitation form.</p>");
@@ -146,11 +197,19 @@ function render_inviteuser() {
 }
 
 function render_registercoach() {
+    $('#inner-content').html("");
+
     var returnVal = "<h3>Interested in Joining?</h3>\n";
     returnVal += "<p>If you'd like to use Dugout Digits to help manage your team send an email ";
     returnVal += "to <a href='mailto:admin@dugoutdigits.com'>admin@dugoutdigits.com</a></p>\n";
     returnVal += "<p>Be sure to include the email you use to login to Dugout Digits in the message</p>\n";
-    return returnVal;
+    $('#content-buffer').html(returnVal);
+
+    // Grow the content section to the right size
+    var newHeight = $('#content-buffer').height();
+    $('#inner-content').animate({ height: newHeight + 30 }, 500, "linear", function () {
+        $('#inner-content').html($('#content-buffer').html()).hide().fadeIn();
+    });
 }
 
 function action_searchteams() {
@@ -229,8 +288,7 @@ function action_inviteuser() {
     $('#inviteuser-success-message').html("");
 
     /* get the team name from the input field */
-    var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('input[name="invite-message"]').val(), "teamID": $('#teamdropdown').val() };
-    /*var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('input[name="invite-message"]').val(), "teamID": $('input[name="teamdropdown"]').val() };*/
+    var p = { "inviteEmail": $('input[name="invite-email"]').val(), "inviteMessage": $('textarea#invite-message').val(), "teamID": $('#teamdropdown').val() };
 
     /* make the call to the invite user web service */
     $.ajax({
@@ -273,7 +331,7 @@ function action_acceptrequest(requestID) {
         dataType: "json",
         success: function (data) {
             $('#requestresponse').html(data.message);
-            render_myteams();
+            load_myrequests();
             action_hidedetails();
         },
         error: function () {
@@ -292,7 +350,7 @@ function action_declinerequest(requestID) {
         dataType: "json",
         success: function (data) {
             $('#requestresponse').html(data.message);
-            render_myteams();
+            load_myrequests();
             action_hidedetails();
         },
         error: function () {
@@ -349,7 +407,8 @@ function action_acceptinvite(inviteID) {
         dataType: "json",
         success: function (data) {
             $('#inviteresponse').html(data.message);
-            render_myteams();
+            load_myinvites();
+            load_myteams();
             action_hidedetails();
         },
         error: function () {
@@ -368,7 +427,8 @@ function action_declineinvite(inviteID) {
         dataType: "json",
         success: function (data) {
             $('#inviteresponse').html(data.message);
-            render_myteams();
+            load_myinvites();
+            load_myteams();
             action_hidedetails();
         },
         error: function () {
@@ -421,6 +481,23 @@ function action_hidedetails() {
     $('#lightbox-content-index').html("");
 }
 
+function action_leaveteam(teamID) {
+    var p = { "teamID": teamID };
+
+    /* make the call to the add request web service */
+    $.ajax({
+        url: "Team/AJAX_LeaveTeam",
+        data: p,
+        dataType: "json",
+        success: function (data) {
+            load_myteams();
+        },
+        error: function () {
+            alert(data.message);
+        }
+    });
+}
+
 function submenu_handler(itemClicked) {
     clearInterval(refreshRequestsIntervalID);
     clearInterval(refreshInvitesIntervalID);
@@ -433,16 +510,16 @@ function submenu_handler(itemClicked) {
             render_myteams();
             break;
         case "subtab-searchteams":
-            $('#inner-content').html(render_searchteams());
+            render_searchteams();
             break;
         case "subtab-addteam":
-            $('#inner-content').html(render_addteam());
+            render_addteam();
             break;
         case "subtab-inviteuser":
             $('#inner-content').html(render_inviteuser());
             break;
         case "subtab-registercoach":
-            $('#inner-content').html(render_registercoach());
+            render_registercoach();
             break;
         default:
             $('#inner-content').html("An error seems to have occured. Sorry for the inconvenience.");
