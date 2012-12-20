@@ -195,6 +195,11 @@ footer,
 
 /* TAB MENU   
 ----------------------------------------------------------*/
+#menucontainer {
+    margin-top: -34px;
+    height: 34px;
+}
+
 ul#menu {
     position: relative;
     margin: 0;
@@ -205,6 +210,12 @@ ul#menu {
 ul#menu li {
     display: inline;
     list-style: none;
+    float: left;
+    padding: 5px 10px;
+    margin: 0 0 3px 3px;
+    background-color: #FFFFFF;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 ul#menu li#greeting {
@@ -215,33 +226,39 @@ ul#menu li#greeting {
     color: #fff;
 }
 
-ul#menu li a {
-    padding: 0 10px;
-    height: 30px;
-    font-weight: bold;
-    text-decoration: none;
-    line-height: 2.8em;
-    background-color: #e8eef4;
-    color: #034af3;
+ul#menu li:hover {
+    background-color: #BBBBBB;
 }
 
-ul#menu li a:hover {
-    background-color: #fff;
-    text-decoration: none;
+ul#menu li.selected-tab {
+    margin: 0 0 0 3px;
+    padding-bottom: 8px;
 }
 
-ul#menu li a:active {
-    background-color: #a6e2a6;
-    text-decoration: none;
+/* DROPDOWN
+----------------------------------------------------------*/
+ul#menu li#dropdown {
+    padding: 0px;
+    background-color: transparent;
 }
 
-ul#menu li.selected a {
-    background-color: #fff;
-    color: #000;
+#dropdown-content {
+    /*padding: 5px 10px;
+    background-color:#FFFFFF;
+    margin-left: 20px;*/
 }
 
-#dropdown {
-    height: 30px;
+ul#menu li#dropdown ul > li {
+    float: none;
+    display: block;
+}
+
+#dropdown-content-buffer {
+    display: none;
+}
+
+#dropdown-default-team {
+    display: none;
 }
 
 /* SUBTAB MENU
@@ -410,7 +427,7 @@ table th {
 
 nav, 
 #menucontainer {
-    
+    float: right;
 }
 
 div#title {

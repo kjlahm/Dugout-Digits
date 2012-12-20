@@ -184,7 +184,7 @@ function render_inviteuser() {
 
             // Grow the content section to the right size
             var newHeight = $('#content-buffer').height();
-            $('#inner-content').animate({ height: newHeight+30 }, 500, "linear", function () {
+            $('#inner-content').animate({ height: newHeight+50 }, 500, "linear", function () {
                 $('#innercontent-inviteuser').html($('#content-buffer').html()).hide().fadeIn();
             });
         },
@@ -330,7 +330,7 @@ function action_acceptrequest(requestID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            $('#requestresponse').html(data.message);
+            /*$('#requestresponse').html(data.message);*/
             load_myrequests();
             action_hidedetails();
         },
@@ -349,7 +349,7 @@ function action_declinerequest(requestID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            $('#requestresponse').html(data.message);
+            /*$('#requestresponse').html(data.message);*/
             load_myrequests();
             action_hidedetails();
         },
@@ -388,7 +388,6 @@ function action_removerequest(requestID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            /* RERENDER TABLE HERE */
             load_myopenrequests();
         },
         error: function () {
@@ -406,9 +405,10 @@ function action_acceptinvite(inviteID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            $('#inviteresponse').html(data.message);
+            /*$('#inviteresponse').html(data.message);*/
             load_myinvites();
             load_myteams();
+            sidebar_listTeams();
             action_hidedetails();
         },
         error: function () {
@@ -426,9 +426,8 @@ function action_declineinvite(inviteID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            $('#inviteresponse').html(data.message);
+            /*$('#inviteresponse').html(data.message);*/
             load_myinvites();
-            load_myteams();
             action_hidedetails();
         },
         error: function () {
@@ -466,7 +465,6 @@ function action_removeinvite(inviteID) {
         data: p,
         dataType: "json",
         success: function (data) {
-            /* RERENDER TABLE HERE */
             load_myopeninvites();
         },
         error: function () {
@@ -491,6 +489,7 @@ function action_leaveteam(teamID) {
         dataType: "json",
         success: function (data) {
             load_myteams();
+            sidebar_listTeams();
         },
         error: function () {
             alert(data.message);
@@ -580,3 +579,7 @@ $(document).ready(function () {
     /* populate the teams in the sidebar */
     sidebar_listTeams();
 })
+
+function action_gototeam(teamID) {
+    window.location = "/Team/Overview?teamID="+teamID;
+}

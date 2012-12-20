@@ -75,21 +75,11 @@
   <ItemGroup>
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Controllers\MessagesController.cs" />
-    <Compile Include="Controllers\OverviewController.cs" />
-    <Compile Include="Controllers\RosterController.cs" />
-    <Compile Include="Controllers\ScheduleController.cs" />
-    <Compile Include="Controllers\StatisticsController.cs" />
     <Compile Include="Controllers\TeamController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountModels.cs" />
-    <Compile Include="Models\MessagesModels.cs" />
-    <Compile Include="Models\OverviewModels.cs" />
-    <Compile Include="Models\RosterModels.cs" />
-    <Compile Include="Models\ScheduleModels.cs" />
-    <Compile Include="Models\StatisticsModels.cs" />
     <Compile Include="Objects\AtBat.cs" />
     <Compile Include="Objects\Game.cs" />
     <Compile Include="Objects\HalfInning.cs" />
@@ -154,6 +144,7 @@
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\modernizr-1.7.js" />
     <Content Include="Scripts\modernizr-1.7.min.js" />
+    <Content Include="Scripts\tab-menu.js" />
     <Content Include="Scripts\team.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -184,15 +175,15 @@
     <Content Include="Views\Shared\_LogOnPartial.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Web.config" />
-    <Content Include="Views\Overview\Index.cshtml" />
-    <Content Include="Views\Roster\Index.cshtml" />
-    <Content Include="Views\Schedule\Index.cshtml" />
-    <Content Include="Views\Statistics\Index.cshtml" />
-    <Content Include="Views\Messages\Index.cshtml" />
     <Content Include="Views\Account\Edit.cshtml" />
     <Content Include="Views\Shared\_LayoutInner.cshtml" />
     <Content Include="Views\Team\Join.cshtml" />
     <None Include="Properties\PublishProfiles\DugoutDigits Web Deploy.pubxml" />
+    <Content Include="Views\Team\Overview.cshtml" />
+    <Content Include="Views\Team\Schedule.cshtml" />
+    <Content Include="Views\Team\Roster.cshtml" />
+    <Content Include="Views\Team\Statistics.cshtml" />
+    <Content Include="Views\Team\Messages.cshtml" />
     <None Include="_bin_deployableAssemblies\System.Web.Mvc.dll" />
     <None Include="_bin_deployableAssemblies\WebMatrix.WebData.xml" />
     <None Include="_bin_deployableAssemblies\WebMatrix.WebData.dll" />

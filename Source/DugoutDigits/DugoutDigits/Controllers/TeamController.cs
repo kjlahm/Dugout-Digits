@@ -12,6 +12,141 @@ namespace DugoutDigits.Controllers
 {
     public class TeamController : Controller
     {
+        public ActionResult Overview() {
+            // If the request isn't logged in redirect to Logon.
+            if (Request.IsAuthenticated) {
+
+                // Try to get the team ID from the URL
+                long teamID = 0;
+                try {
+                    teamID = Convert.ToInt64(Request.QueryString["teamID"]);
+                }
+                catch {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Get the team information
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+
+                ViewBag.Title = team.name;
+                ViewBag.Name = team.name;
+                ViewBag.LogoURL = team.logoURL;
+                ViewBag.TeamID = team.ID;
+
+                return View();
+            }
+            return RedirectToAction("LogOn", "Account");
+        }
+
+        public ActionResult Schedule() {
+            // If the request isn't logged in redirect to Logon.
+            if (Request.IsAuthenticated) {
+
+                // Try to get the team ID from the URL
+                long teamID = 0;
+                try {
+                    teamID = Convert.ToInt64(Request.QueryString["teamID"]);
+                }
+                catch {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Get the team information
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+
+                ViewBag.Title = team.name;
+                ViewBag.Name = team.name;
+                ViewBag.LogoURL = team.logoURL;
+                ViewBag.TeamID = team.ID;
+
+                return View();
+            }
+            return RedirectToAction("LogOn", "Account");
+        }
+
+        public ActionResult Roster() {
+            // If the request isn't logged in redirect to Logon.
+            if (Request.IsAuthenticated) {
+
+                // Try to get the team ID from the URL
+                long teamID = 0;
+                try {
+                    teamID = Convert.ToInt64(Request.QueryString["teamID"]);
+                }
+                catch {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Get the team information
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+
+                ViewBag.Title = team.name;
+                ViewBag.Name = team.name;
+                ViewBag.LogoURL = team.logoURL;
+                ViewBag.TeamID = team.ID;
+
+                return View();
+            }
+            return RedirectToAction("LogOn", "Account");
+        }
+
+        public ActionResult Statistics() {
+            // If the request isn't logged in redirect to Logon.
+            if (Request.IsAuthenticated) {
+
+                // Try to get the team ID from the URL
+                long teamID = 0;
+                try {
+                    teamID = Convert.ToInt64(Request.QueryString["teamID"]);
+                }
+                catch {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Get the team information
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+
+                ViewBag.Title = team.name;
+                ViewBag.Name = team.name;
+                ViewBag.LogoURL = team.logoURL;
+                ViewBag.TeamID = team.ID;
+
+                return View();
+            }
+            return RedirectToAction("LogOn", "Account");
+        }
+
+        public ActionResult Messages() {
+            // If the request isn't logged in redirect to Logon.
+            if (Request.IsAuthenticated) {
+
+                // Try to get the team ID from the URL
+                long teamID = 0;
+                try {
+                    teamID = Convert.ToInt64(Request.QueryString["teamID"]);
+                }
+                catch {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Get the team information
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+
+                ViewBag.Title = team.name;
+                ViewBag.Name = team.name;
+                ViewBag.LogoURL = team.logoURL;
+                ViewBag.TeamID = team.ID;
+
+                return View();
+            }
+            return RedirectToAction("LogOn", "Account");
+        }
+
         public ActionResult Join() {
             if (Request.IsAuthenticated) {
 
@@ -58,7 +193,32 @@ namespace DugoutDigits.Controllers
             // Create ul to hold the team names
             string result = "<ul>\n";
             foreach (Team team in teams) {
-                result += "<li><div>" + team.name + "</div></li>\n";
+                result += "<li><div onClick='action_gototeam(" + team.ID + ")'>" + team.name + "</div></li>\n";
+            }
+            result += "</ul>\n";
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        public ActionResult AJAX_GetTeams2(long teamID) {
+            // Get the teams associated with the user who's logged in
+            DBAccessor dba = new DBAccessor();
+            List<Team> teams = dba.GetTeamListCoach(User.Identity.Name);
+            teams.AddRange(dba.GetTeamListMember(User.Identity.Name));
+
+            // See if a team to match was given, if so, move it to the front
+            int i = teams.FindIndex(t => t.ID.Equals(teamID));
+            Team temp = teams[i];
+            teams[i] = teams[0];
+            teams[0] = temp;
+
+            // Create ul to hold the team names
+            string result = "<ul>\n";
+            foreach (Team team in teams) {
+                result += "<li><div onClick='action_gototeam(" + team.ID + ")'>" + team.name + "</div></li>\n";
             }
             result += "</ul>\n";
 
@@ -393,7 +553,9 @@ namespace DugoutDigits.Controllers
 
                     // Add the team to the database
                     result = "Error adding the team.";
-                    if (dba.AddNewTeam(teamName, coachID)) {
+                    Team newTeam = new Team();
+                    newTeam.name = teamName;
+                    if (dba.AddNewTeam(newTeam, coachID)) {
                         result = teamName + " successfully added.";
                     }
                 }

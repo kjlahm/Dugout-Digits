@@ -315,12 +315,12 @@ namespace DugoutDigits.Utilities
         /// <param name="teamName">The name of the new team.</param>
         /// <param name="coachID">The ID of the associated coach.</param>
         /// <returns>The success of the insert.</returns>
-        public bool AddNewTeam(String teamName, long coachID) {
+        public bool AddNewTeam(Team team, long coachID) {
             // Add the team to the teams table
             String query = "INSERT INTO ";
             query += AppConstants.MYSQL_TABLE_TEAM;
-            query += " (name) VALUES (";
-            query += "'" + teamName + ")";
+            query += " (name, logoURL) VALUES (";
+            query += "'" + team.name + "', '" + team.logoURL + "')";
 
             // Get the ID of the added team
             MySqlDataReader dr = null;
@@ -417,6 +417,7 @@ namespace DugoutDigits.Utilities
                 returnVal = new Team();
                 returnVal.name = dr.GetString("name");
                 returnVal.ID = id;
+                returnVal.logoURL = dr.GetString("logoURL");
                 returnVal.coaches.Add(tempPerson);
 
                 // If there are more coaches, get their information and add to the team
@@ -424,11 +425,61 @@ namespace DugoutDigits.Utilities
                     tempPerson = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
                     tempPerson.ID = dr.GetInt64("personID");
                     tempPerson.email = dr.GetString("email");
-                    tempPerson.setPassword(dr.GetString("password"));
                     //coach.imageURL = dr.GetString("imageURL");
                     //tempPerson.height = dr.GetInt16("height");
                     //tempPerson.weight = dr.GetInt16("weight");
                     returnVal.coaches.Add(tempPerson);
+                }
+            }
+            catch {
+            }
+            finally {
+                if (needToClose) {
+                    connection.Close();
+                }
+            }
+
+            returnVal.players = GetPlayersOnTeam(returnVal.ID);
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Gets the players assocaited with the given team ID in the database.
+        /// </summary>
+        /// <param name="teamID">The ID of the team.</param>
+        /// <returns>A list of players tied to the given team ID.</returns>
+        public List<Person> GetPlayersOnTeam(long teamID) {
+            MySqlDataReader dr = null;
+            List<Person> returnVal = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_TEAMPERSON + " link, " + AppConstants.MYSQL_TABLE_PERSON + " person";
+            query += " WHERE person.personID=link.personID AND link.teamID=" + teamID;
+
+            bool needToClose = false;
+            try {
+                // Try to open a connection if one hasn't been opened.
+                try {
+                    connection.Open();
+                    needToClose = true;
+                }
+                catch {
+                }
+
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                // If there are more coaches, get their information and add to the team
+                Person tempPerson;
+                while (dr.Read()) {
+                    tempPerson = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    tempPerson.ID = dr.GetInt64("personID");
+                    tempPerson.email = dr.GetString("email");
+                    //coach.imageURL = dr.GetString("imageURL");
+                    //tempPerson.height = dr.GetInt16("height");
+                    //tempPerson.weight = dr.GetInt16("weight");
+                    returnVal.Add(tempPerson);
                 }
             }
             catch {
@@ -705,7 +756,6 @@ namespace DugoutDigits.Utilities
 
                 team = new Team();
                 team.ID = dr.GetInt64("teamID");
-                team.name = dr.GetString("name");
                 
                 returnVal = new Request(requestee, team);
                 returnVal.ID = requestID;
@@ -714,6 +764,8 @@ namespace DugoutDigits.Utilities
             } finally {
                 connection.Close();
             }
+
+            returnVal.team = GetTeamDetails(returnVal.team.ID);
 
             return returnVal;
         }
@@ -899,6 +951,7 @@ namespace DugoutDigits.Utilities
                 team.coaches.Add(invitor);
 
                 returnVal = new Invitation(inviteID, team, invitor);
+                returnVal.invitee = dr.GetString("invitee");
             }
             catch {
                 returnVal = null;
@@ -1033,7 +1086,7 @@ namespace DugoutDigits.Utilities
         public bool RemovePlayerFromTeam(long playerID, long teamID) {
             String query = "DELETE FROM ";
             query += AppConstants.MYSQL_TABLE_TEAMPERSON;
-            query += " WHERE teamID=" + teamID + " AND playerID=" + playerID;
+            query += " WHERE teamID=" + teamID + " AND personID=" + playerID;
             return ExecuteInsert(query);
         }
 

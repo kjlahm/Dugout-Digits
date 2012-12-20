@@ -164,6 +164,5 @@ namespace DugoutDigits.Objects
             //Calculate the hash code for the email. 
             return hashPersonEmail;
         }
-
     }
 }

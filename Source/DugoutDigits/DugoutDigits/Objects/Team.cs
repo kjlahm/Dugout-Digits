@@ -11,13 +11,13 @@ namespace DugoutDigits.Objects
     public class Team
     {
         public String name { get; set; }   // The team's name.
+        public String logoURL { get; set; }
         public short wins { get; set; }   // The number of wins the team has.
         public short loses { get; set; }   // The number of loses the team has.
         public short ties { get; set; }   // The number of ties the team has.
         public List<Person> coaches { get; set; }   // The coach of the team.
+        public List<Person> players { get; set; }   // The players on the team.
         public long ID { get; set; }    // The ID of the team as found in the DB.
-
-        private List<Person> players;   // The players on the team.
 
         public string CoachesDisplay {
             get {
@@ -32,9 +32,10 @@ namespace DugoutDigits.Objects
             }
         }
 
-        public Team(String newName, List<Person> newCoaches)
+        public Team(String newName, String newLogoUrl, List<Person> newCoaches)
         {
             name = newName;
+            logoURL = newLogoUrl;
             ID = 0;
             coaches = newCoaches;
             wins = 0;
@@ -43,7 +44,7 @@ namespace DugoutDigits.Objects
             players = new List<Person>();
         }
 
-        public Team() : this("default team name", new List<Person>()) { }
+        public Team() : this("default team name", "http://i.imgur.com/wvqlV.jpg", new List<Person>()) { }
 
         /// <summary>
         /// Returns the number of players on the team.
@@ -52,6 +53,37 @@ namespace DugoutDigits.Objects
         public int getTeamSize()
         {
             return players.Count;
+        }
+    }
+
+    // Custom comparer for the Team class 
+    class TeamComparer : IEqualityComparer<Team> {
+        // Products are equal if their names and product numbers are equal. 
+        public bool Equals(Team x, Team y) {
+
+            //Check whether the compared objects reference the same data. 
+            if (Object.ReferenceEquals(x, y)) return true;
+
+            //Check whether any of the compared objects is null. 
+            if (Object.ReferenceEquals(x, null) || Object.ReferenceEquals(y, null))
+                return false;
+
+            //Check whether the products' properties are equal. 
+            return x.ID == y.ID;
+        }
+
+        // If Equals() returns true for a pair of objects  
+        // then GetHashCode() must return the same value for these objects. 
+
+        public int GetHashCode(Team team) {
+            //Check whether the object is null 
+            if (Object.ReferenceEquals(team, null)) return 0;
+
+            //Get hash code for the email field if it is not null. 
+            int hashTeamID = team.ID == null ? 0 : team.ID.GetHashCode();
+
+            //Calculate the hash code for the ID. 
+            return hashTeamID;
         }
     }
 }

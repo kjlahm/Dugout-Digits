@@ -1,0 +1,38 @@
+﻿@{
+    Layout = "../Shared/_LayoutInner.cshtml";
+}
+
+<div class="leftColA">
+    <div class="columnContent">
+        <div id="team-summary-info">
+            <h3>Team Summary</h3>
+            <p>@ViewBag.Name</p>
+            <img src="@ViewBag.LogoURL" alt="team logo" />
+        </div>
+        <div id="sidebar-playerlist">
+            <h3>Players</h3>
+            <div id="sidebar-playerlist-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="rightColA">
+    <div class="columnContent">
+        <div id="inner-content">
+            <p>Welcome to the team schedule page for @ViewBag.Name</p>
+        </div>
+    </div>
+</div>
+
+<div class="clear"></div>
+
+<!-- Include necesary scripts at the bottom of the page. -->
+<script type="text/javascript" src="./../../Scripts/schedule.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#tab-schedule').addClass("selected-tab");
+
+        /* Load the teams for the dropdown */
+        load_dropdown(@ViewBag.TeamID);
+    })
+</script>
