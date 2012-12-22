@@ -7,6 +7,7 @@ using DugoutDigits.Utilities;
 using DugoutDigits.Objects;
 using System.Net.Mail;
 using System.Net;
+using System.Globalization;
 
 namespace DugoutDigits.Controllers
 {
@@ -28,11 +29,14 @@ namespace DugoutDigits.Controllers
                 // Get the team information
                 DBAccessor dba = new DBAccessor();
                 Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
 
                 ViewBag.Title = team.name;
                 ViewBag.Name = team.name;
                 ViewBag.LogoURL = team.logoURL;
                 ViewBag.TeamID = team.ID;
+                ViewBag.IsCoach = team.coaches.Contains(user, new PersonComparer());
 
                 return View();
             }
@@ -55,11 +59,14 @@ namespace DugoutDigits.Controllers
                 // Get the team information
                 DBAccessor dba = new DBAccessor();
                 Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
 
                 ViewBag.Title = team.name;
                 ViewBag.Name = team.name;
                 ViewBag.LogoURL = team.logoURL;
                 ViewBag.TeamID = team.ID;
+                ViewBag.IsCoach = team.coaches.Contains(user, new PersonComparer());
 
                 return View();
             }
@@ -82,18 +89,21 @@ namespace DugoutDigits.Controllers
                 // Get the team information
                 DBAccessor dba = new DBAccessor();
                 Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
 
                 ViewBag.Title = team.name;
                 ViewBag.Name = team.name;
                 ViewBag.LogoURL = team.logoURL;
                 ViewBag.TeamID = team.ID;
+                ViewBag.IsCoach = team.coaches.Contains(user, new PersonComparer());
 
                 return View();
             }
             return RedirectToAction("LogOn", "Account");
         }
 
-        public ActionResult Statistics() {
+        public ActionResult Stats() {
             // If the request isn't logged in redirect to Logon.
             if (Request.IsAuthenticated) {
 
@@ -109,11 +119,14 @@ namespace DugoutDigits.Controllers
                 // Get the team information
                 DBAccessor dba = new DBAccessor();
                 Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
 
                 ViewBag.Title = team.name;
                 ViewBag.Name = team.name;
                 ViewBag.LogoURL = team.logoURL;
                 ViewBag.TeamID = team.ID;
+                ViewBag.IsCoach = team.coaches.Contains(user, new PersonComparer());
 
                 return View();
             }
@@ -136,11 +149,14 @@ namespace DugoutDigits.Controllers
                 // Get the team information
                 DBAccessor dba = new DBAccessor();
                 Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
 
                 ViewBag.Title = team.name;
                 ViewBag.Name = team.name;
                 ViewBag.LogoURL = team.logoURL;
                 ViewBag.TeamID = team.ID;
+                ViewBag.IsCoach = team.coaches.Contains(user, new PersonComparer());
 
                 return View();
             }
@@ -999,6 +1015,379 @@ namespace DugoutDigits.Controllers
             }
 
             // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Returns a list of the players tied to the team with the given team ID in the form 
+        /// of an unordered list.
+        /// </summary>
+        /// <param name="teamID">The ID of the team in interest.</param>
+        /// <returns>An unordered list of the players on the team.</returns>
+        public ActionResult AJAX_GetTeamMembers(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+
+                if (team.coaches.Contains(user, new PersonComparer()) || team.players.Contains(user, new PersonComparer())) {
+                    result = "<ul>";
+                    foreach (Person player in team.players) {
+                        result += "<li>" + player.firstName + " " + player.lastName + "</li>";
+                    }
+                    result += "</ul>";
+
+                }
+                else {
+                    result = "You must be on the team or a coach of the team to view the players.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view players of " + team.name + " (" + team.ID + ").");
+                }
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Returns a list of the coaches tied to the team with the given team ID in the form 
+        /// of an unordered list.
+        /// </summary>
+        /// <param name="teamID">The ID of the team in interest.</param>
+        /// <returns>An unordered list of the coaches of the team.</returns>
+        public ActionResult AJAX_GetTeamCoaches(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+
+                if (team.coaches.Contains(user, new PersonComparer()) || team.players.Contains(user, new PersonComparer())) {
+                    result = "<ul>";
+                    foreach (Person coach in team.coaches) {
+                        result += "<li>" + coach.firstName + " " + coach.lastName + "</li>";
+                    }
+                    result += "</ul>";
+
+                }
+                else {
+                    result = "You must be on the team or a coach of the team to view the coaches.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view coaches of " + team.name);
+                }
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Renders the HTML for an add season form.
+        /// </summary>
+        /// <param name="teamID">The ID of the team to which the season would be added.</param>
+        /// <returns>The HTML for the form.</returns>
+        public ActionResult AJAX_RenderAddSeasonForm(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                List<Season> seasons = dba.GetSeasons(teamID);
+
+                result = "<form><select class='editor-field' name='yearpicker' id='yearpicker'>";
+                for (int i = 0; i < 5; i++) {
+                    Season tempSeason = new Season();
+                    tempSeason.year = (short)(DateTime.Now.Year + i);
+                    if (!seasons.Contains(tempSeason, new SeasonComparer())) {
+                        result += "<option value='" + tempSeason.year + "'>" + tempSeason.year + "</option>";
+                    }
+                }
+                result += "</select>";
+
+                result += "<div class='submit-button' onClick='action_addseason()'>Add Season</div>";
+                result += "<div id='add-season-feedback'></div></form>";
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Get's the seasons tied to the team with the given ID in the form of an 
+        /// unordered list.
+        /// </summary>
+        /// <param name="teamID">The ID of the team in interest.</param>
+        /// <returns>An unordered list of the seasons.</returns>
+        public ActionResult AJAX_GetSeasons(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+
+                if (team.coaches.Contains(user, new PersonComparer()) || team.players.Contains(user, new PersonComparer())) {
+                    List<Season> seasons = dba.GetSeasons(teamID);
+                    if (seasons.Any()) {
+                        result = "<ul>";
+                        foreach (Season season in seasons) {
+                            result += "<li>" + season.year + "</li>";
+                        }
+                        result += "</ul>";
+                    }
+                    else {
+                        result = "<p>There are currently no seasons for this team.</p>";
+                    }
+                }
+                else {
+                    result = "You must be on the team or a coach of the team to view the seasons.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view seasons of " + team.name + " ("+team.ID+").");
+                }
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Adds the given season to the team with the matching team ID.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <param name="season">The season to be added to the team of interest.</param>
+        /// <returns>A message detailing the result of the addition.</returns>
+        public ActionResult AJAX_AddSeason(long teamID, short season) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+
+                if (team.coaches.Contains(user, new PersonComparer())) {
+                    result = "Error adding season " + season + " to " + team.name + ".";
+                    if (dba.AddSeason(teamID, season)) {
+                        result = "Season " + season + " added to " + team.name + ".";
+                    }
+                } else {
+                    result = "You must be a coach of the team to add a season.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a season to "+team.name + " (" + team.ID + ").");
+                }
+            }
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Renders the HTML for an add game form.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <returns>The HTML for the form.</returns>
+        public ActionResult AJAX_RenderAddGameForm(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                List<Season> seasons = dba.GetSeasons(teamID);
+
+                result = "<form>";
+                result += "<h4>Opponent</h4>";
+                result += "<input class='editor-field' type='text' name='add-game-opponent' />\n";
+                result += "<h4>Home or Away</h4>";
+                result += "<input type='radio' name='add-game-homeaway' value='Home'>Home";
+                result += "<input type='radio' name='add-game-homeaway' value='Away'>Away<br/>";
+                result += "<h4>Location</h4>";
+                result += "<input class='editor-field' type='text' name='add-game-location' />\n";
+                result += "<div style='width: 200px;'><div class='leftColB'>";
+                result += "<h4>Date</h4>";
+                result += "<input id='add-game-datepicker' class='editor-field' type='text' name='add-game-date' readonly='readonly' style='width: 90px;' />\n";
+                result += "</div><div class='rightColB'>";
+                result += "<h4 style='margin-left: 10px;'>Time</h4>";
+                result += "<input id='add-game-timepicker' class='editor-field' type='text' name='add-game-time' readonly='readonly' style='width: 90px; margin-left: 10px;' />\n";
+                result += "</div><div class='clear'></div></div>";
+                result += "<h4>Season</h4>";
+                result += "<select class='editor-field' name='add-game-season' id='add-game-season'>";
+                foreach (Season season in seasons) {
+                    if (season.year == DateTime.Now.Year) {
+                        result += "<option value='" + season.ID + "' selected='selected'>" + season.year + "</option>";
+                    }
+                    else {
+                        result += "<option value='" + season.ID + "'>" + season.year + "</option>";
+                    }
+                }
+                result += "</select>";
+                result += "<div class='submit-button' onClick='action_addgame()'>Add Game</div>";
+                result += "<div id='add-game-feedback'></div></form>";
+                result += "<script>$('#add-game-datepicker').datepicker({ dateFormat: 'm/dd' });</script>";
+                result += "<script>$('#add-game-timepicker').timepicker({ timeFormat: 'h:mm TT' });</script>";
+                result += "<script>isHome = \"Home\"; $('input:radio[name=\"add-game-homeaway\"]').click(function(){ isHome = $(this).val() });</script>";
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Creates a game object with the given information, ties it to the team with the given 
+        /// team ID and saved the game to the database.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <param name="opponent">The name of the opposing team.</param>
+        /// <param name="homeOrAway">If the game is at home or away (string: "Home" or "Away").</param>
+        /// <param name="location">The location of the game.</param>
+        /// <param name="date">The date of the game (M/D).</param>
+        /// <param name="time">The time of the game (H/MM TT).</param>
+        /// <param name="seasonID">The ID of the season it is being added to.</param>
+        /// <returns>A message detailing the result of the addition.</returns>
+        public ActionResult AJAX_AddGame(long teamID, string opponent, string homeOrAway, string location, string date, string time, long seasonID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+                Season season = dba.GetSeason(seasonID);
+
+                if (team.coaches.Contains(user, new PersonComparer())) {
+                    try {
+                        DateTime gameDate = Parser.ParseDateAndTime(date, time, season.year);
+                        Game game = new Game();
+                        game.isHome = homeOrAway.Equals("Home");
+                        game.location = location;
+                        game.opponent = opponent;
+                        game.season = season;
+                        game.date = gameDate;
+
+                        if (dba.AddGame(game)) {
+                            result = "Game sucessfully added to the season.";
+                        }
+                        else {
+                            result = "Error adding the game to the season.";
+                        }
+                    }
+                    catch {
+                        result = "An invalid date was given.";
+                    }
+                }
+                else {
+                    result = "You must be a coach of the team to add a game.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a game to " + team.name + " (" + team.ID + ").");
+                }
+            }
+
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Renders the HTML for an add practice form.
+        /// </summary>
+        /// <param name="teamID"></param>
+        /// <returns></returns>
+        public ActionResult AJAX_RenderAddPracticeForm(long teamID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                List<Season> seasons = dba.GetSeasons(teamID);
+
+                result = "<form>";
+                result += "<h4>Location</h4>";
+                result += "<input class='editor-field' type='text' name='add-practice-location' />\n";
+                result += "<div style='width: 200px;'><div class='leftColB'>";
+                result += "<h4>Date</h4>";
+                result += "<input id='add-practice-datepicker' class='editor-field' type='text' name='add-practice-date' readonly='readonly' style='width: 90px;' />\n";
+                result += "</div><div class='rightColB'>";
+                result += "<h4 style='margin-left: 10px;'>Time</h4>";
+                result += "<input id='add-practice-timepicker' class='editor-field' type='text' name='add-practice-time' readonly='readonly' style='width: 90px; margin-left: 10px;' />\n";
+                result += "</div><div class='clear'></div></div>";
+                result += "<h4>Season</h4>";
+                result += "<select class='editor-field' name='add-practice-season' id='add-practice-season'>";
+                foreach (Season season in seasons) {
+                    if (season.year == DateTime.Now.Year) {
+                        result += "<option value='" + season.ID + "' selected='selected'>" + season.year + "</option>";
+                    }
+                    else {
+                        result += "<option value='" + season.ID + "'>" + season.year + "</option>";
+                    }
+                }
+                result += "</select>";
+                result += "<div class='submit-button' onClick='action_addpractice()'>Add Practice</div>";
+                result += "<div id='add-practice-feedback'></div></form>";
+                result += "<script>$('#add-practice-datepicker').datepicker({ dateFormat: 'm/dd' });</script>";
+                result += "<script>$('#add-practice-timepicker').timepicker({ timeFormat: 'h:mm TT' });</script>";
+            }
+
+            // Return the success message of the removal
+            return Json(
+                new { message = result },
+                JsonRequestBehavior.AllowGet
+            );
+        }
+
+        /// <summary>
+        /// Creates a practice object with the given information, ties it to the team with 
+        /// the given team ID and saved the game to the database.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <param name="location">The location of the practice.</param>
+        /// <param name="date">The date of the practice (M/D).</param>
+        /// <param name="time">The time of the practice (H/MM TT).</param>
+        /// <param name="seasonID">The ID of the season is is being added to.</param>
+        /// <returns>A message detailing the result of the addition.</returns>
+        public ActionResult AJAX_AddPractice(long teamID, string location, string date, string time, long seasonID) {
+            string result = "Request is not authenticated.";
+            if (Request.IsAuthenticated) {
+                DBAccessor dba = new DBAccessor();
+                Team team = dba.GetTeamDetails(teamID);
+                Person user = new Person();
+                user.email = User.Identity.Name;
+                Season season = dba.GetSeason(seasonID);
+
+                if (team.coaches.Contains(user, new PersonComparer())) {
+                    try {
+                        DateTime practiceDate = Parser.ParseDateAndTime(date, time, season.year);
+                        Practice practice = new Practice();
+                        practice.location = location;
+                        practice.season = season;
+                        practice.date = practiceDate;
+
+                        if (dba.AddPractice(practice)) {
+                            result = "Practice sucessfully added to the season.";
+                        }
+                        else {
+                            result = "Error adding the practice to the season.";
+                        }
+                    }
+                    catch {
+                        result = "An invalid date was given.";
+                    }
+                }
+                else {
+                    result = "You must be a coach of the team to add a practice.";
+                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a practice to " + team.name + " (" + team.ID + ").");
+                }
+            }
+
             return Json(
                 new { message = result },
                 JsonRequestBehavior.AllowGet

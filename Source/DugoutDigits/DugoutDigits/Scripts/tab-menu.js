@@ -10,7 +10,7 @@ function menu_handler(itemClicked, teamID) {
             window.location = "/Team/Roster?teamID=" + teamID;
             break;
         case "tab-statistics":
-            window.location = "/Team/Statistics?teamID=" + teamID;
+            window.location = "/Team/Stats?teamID=" + teamID;
             break;
         case "tab-messages":
             window.location = "/Team/Messages?teamID=" + teamID;
@@ -37,6 +37,18 @@ function load_dropdown(teamID) {
     });
 }
 
+function expand_dropdown() {
+    $('#dropdown-content').html($('#dropdown-content-buffer').html());
+    $('#dropdown-content li').css('border-style', 'solid').css('margin-bottom', '-3px').css('margin-top', '-3px');
+    $('#dropdown').css('margin-left', '0').css('margin-right', '-3px');
+}
+
+function collapse_dropdown() {
+    $('#dropdown-content').html($('#dropdown-default-team').html());
+    $('#dropdown-content li').css('border-style', 'none').css('margin-bottom', '3px').css('margin-top', '0');
+    $('#dropdown').css('margin-left', '3px').css('margin-right', '0');
+}
+
 $(document).ready(function () {
     /* Put the current team in the dropdown div */
     $('#dropdown-content').html($('#dropdown-default-team').html());
@@ -44,9 +56,9 @@ $(document).ready(function () {
     /* On hover show the teams */
     $('#dropdown-content').hover(
     function () {
-        $('#dropdown-content').html($('#dropdown-content-buffer').html());
+        expand_dropdown();
     },
     function () {
-        $('#dropdown-content').html($('#dropdown-default-team').html());
+        collapse_dropdown();
     });
 })

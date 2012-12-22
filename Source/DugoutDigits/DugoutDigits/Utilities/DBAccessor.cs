@@ -469,6 +469,7 @@ namespace DugoutDigits.Utilities
 
                 command.CommandText = query;
                 dr = command.ExecuteReader();
+                returnVal = new List<Person>();
 
                 // If there are more coaches, get their information and add to the team
                 Person tempPerson;
@@ -1218,6 +1219,166 @@ namespace DugoutDigits.Utilities
             String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_LOGINVALIDREQUESTS;
             query += " (userID, message) VALUES (" + ID + ", '" + message + "')";
             return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Returns a list of seasons tied to the team with the given team ID.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <returns>A list of seasons tied to the team.</returns>
+        public List<Season> GetSeasons(long teamID) {
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_SEASON + " season ";
+            query += "WHERE team.teamID = season.teamID AND team.teamID = " + teamID;
+
+            List<Season> returnVal = null;
+            MySqlDataReader dr = null;
+            bool needToClose = false;
+            try {
+                // Try to open a connection if one hasn't been opened.
+                try {
+                    connection.Open();
+                    needToClose = true;
+                }
+                catch {
+                }
+
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                returnVal = new List<Season>();
+
+                Season season;
+                Team team;
+                while (dr.Read()) {
+                    team = new Team(dr.GetString("name"), dr.GetString("logoURL"), new List<Person>());
+                    team.ID = dr.GetInt64("teamID");
+                    season = new Season(team, dr.GetInt16("seasonYear"));
+                    season.ID = dr.GetInt64("seasonID");
+                    returnVal.Add(season);
+                }
+            }
+            catch {
+            }
+            finally {
+                if (needToClose) {
+                    connection.Close();
+                }
+            }
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Gets the details of a season matching the given season ID.
+        /// </summary>
+        /// <param name="seasonID">The ID of the season of interest.</param>
+        /// <returns>The season of interest.</returns>
+        public Season GetSeason(long seasonID) {
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_SEASON;
+            query += " WHERE seasonID = " + seasonID;
+
+            Season returnVal = null;
+            MySqlDataReader dr = null;
+            bool needToClose = false;
+            try {
+                // Try to open a connection if one hasn't been opened.
+                try {
+                    connection.Open();
+                    needToClose = true;
+                }
+                catch {
+                }
+
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                returnVal = new Season();
+
+                
+                dr.Read();
+                Team team = new Team();
+                team.ID = dr.GetInt64("teamID");
+                returnVal = new Season(team, dr.GetInt16("seasonYear"));
+                returnVal.ID = dr.GetInt64("seasonID");
+            }
+            catch {
+            }
+            finally {
+                if (needToClose) {
+                    connection.Close();
+                }
+            }
+
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Adds a season to the team matching the given team ID with the given 
+        /// season year value.
+        /// </summary>
+        /// <param name="teamID">The ID of the team of interest.</param>
+        /// <param name="season">The year of the season being added.</param>
+        /// <returns>Success of the insert.</returns>
+        public bool AddSeason(long teamID, short season) {
+            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_SEASON;
+            query += " (teamID, seasonYear) VALUES (" + teamID + ", " + season + ")";
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Adds the given game to the database.
+        /// </summary>
+        /// <param name="game">The game to be added to the database.</param>
+        /// <returns>Success of the addition.</returns>
+        public bool AddGame(Game game) {
+            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_GAME;
+            query += " (seasonID, gameDate, location, opponent, isHome) VALUES (";
+            query += game.season.ID + ", @date, '" + game.location + "', '" + game.opponent + "', " + Convert.ToInt16(game.isHome) + ")";
+
+            MySqlDataReader dr = null;
+            bool success = true;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                command.Parameters.AddWithValue("@date", game.date);
+                dr = command.ExecuteReader();
+            }
+            catch {
+                success = false;
+            }
+            finally {
+                connection.Close();
+            }
+            return success;
+        }
+
+        /// <summary>
+        /// Adds the given practice to the database.
+        /// </summary>
+        /// <param name="practice">The practice to be added to the database.</param>
+        /// <returns>Success of the addition.</returns>
+        public bool AddPractice(Practice practice) {
+            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_PRACTICE;
+            query += " (seasonID, practiceDate, location) VALUES (";
+            query += practice.season.ID + ", @date, '" + practice.location + "')";
+
+            MySqlDataReader dr = null;
+            bool success = true;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                command.Parameters.AddWithValue("@date", practice.date);
+                dr = command.ExecuteReader();
+            }
+            catch {
+                success = false;
+            }
+            finally {
+                connection.Close();
+            }
+            return success;
         }
     }
 }

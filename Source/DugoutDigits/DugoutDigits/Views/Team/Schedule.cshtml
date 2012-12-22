@@ -7,7 +7,11 @@
         <div id="team-summary-info">
             <h3>Team Summary</h3>
             <p>@ViewBag.Name</p>
-            <img src="@ViewBag.LogoURL" alt="team logo" />
+            <img src="@ViewBag.LogoURL" alt="team logo" width="180" />
+        </div>
+        <div id="sidebar-coachlist">
+            <h3>Coached By</h3>
+            <div id="sidebar-coachlist-content"></div>
         </div>
         <div id="sidebar-playerlist">
             <h3>Players</h3>
@@ -18,6 +22,16 @@
 
 <div class="rightColA">
     <div class="columnContent">
+        @if(@ViewBag.IsCoach) {
+            <div id="subtabs">
+                <ul>
+                    <li id="subtab-viewschedule" class="active-subtab">View Schedule</li>
+                    <li id="subtab-addseason" class="inactive-subtab">Add Season</li>
+                    <li id="subtab-addgame" class="inactive-subtab">Add Game</li>
+                    <li id="subtab-addpractice" class="inactive-subtab">Add Practice</li>
+                </ul>
+            </div>
+        }
         <div id="inner-content">
             <p>Welcome to the team schedule page for @ViewBag.Name</p>
         </div>
@@ -27,12 +41,26 @@
 <div class="clear"></div>
 
 <!-- Include necesary scripts at the bottom of the page. -->
-<script type="text/javascript" src="./../../Scripts/schedule.js"></script>
+<script type="text/javascript" src="./../../Scripts/team-schedule.js"></script>
+<script type="text/javascript" src="./../../Scripts/timepicker.js"></script>
 <script type="text/javascript">
     $(document).ready(function () {
         $('#tab-schedule').addClass("selected-tab");
 
         /* Load the teams for the dropdown */
         load_dropdown(@ViewBag.TeamID);
+
+        /* populate the coaches and players in the sidebar */
+        load_teamcoaches(@ViewBag.TeamID);
+        load_teammembers(@ViewBag.TeamID);
+
+        /* load the schedule on the page */
+        render_viewschedule();
+
+        /* register click listeners with the sub tabs */
+        $('#subtab-viewschedule').click(function () { submenu_handler("subtab-viewschedule"); });
+        $('#subtab-addseason').click(function () { submenu_handler("subtab-addseason"); });
+        $('#subtab-addgame').click(function () { submenu_handler("subtab-addgame"); });
+        $('#subtab-addpractice').click(function () { submenu_handler("subtab-addpractice"); });
     })
 </script>

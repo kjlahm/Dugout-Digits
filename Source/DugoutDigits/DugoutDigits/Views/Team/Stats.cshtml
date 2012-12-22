@@ -7,7 +7,11 @@
         <div id="team-summary-info">
             <h3>Team Summary</h3>
             <p>@ViewBag.Name</p>
-            <img src="@ViewBag.LogoURL" alt="team logo" />
+            <img src="@ViewBag.LogoURL" alt="team logo" width="180" />
+        </div>
+        <div id="sidebar-coachlist">
+            <h3>Coached By</h3>
+            <div id="sidebar-coachlist-content"></div>
         </div>
         <div id="sidebar-playerlist">
             <h3>Players</h3>
@@ -27,12 +31,16 @@
 <div class="clear"></div>
 
 <!-- Include necesary scripts at the bottom of the page. -->
-<script type="text/javascript" src="./../../Scripts/team.js"></script>
+<script type="text/javascript" src="./../../Scripts/team-stats.js"></script>
 <script type="text/javascript">
     $(document).ready(function () {
         $('#tab-statistics').addClass("selected-tab");
 
         /* Load the teams for the dropdown */
         load_dropdown(@ViewBag.TeamID);
+
+        /* populate the coaches and players in the sidebar */
+        load_teamcoaches(@ViewBag.TeamID);
+        load_teammembers(@ViewBag.TeamID);
     })
 </script>
