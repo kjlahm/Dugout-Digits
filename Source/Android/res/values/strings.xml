@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Strings used for the menus -->
+    <string name="menu_login">Sign In</string>
+    <string name="menu_logout">Sign Out</string>
+    <string name="menu_settings">Settings</string>
+
+    <!-- Strings used on the home activity -->
+    <string name="app_name">Dugout Digits</string>
+    <string name="home_addgame_title">New Game</string>
+    <string name="home_gamelibrary_title">Game Library</string>
+    <string name="home_manageroster_title">Manage Roster</string>
+    <string name="home_practicefilm_title">Practice Film</string>
+    
+    <!-- Strings used on the roster activity -->
+    <string name="title_activity_roster">Roster</string>
+    <string name="roster_addplayer_btntext">Add Player</string>
+    <string name="roster_sync_btntext">Sync</string>
+
+</resources>

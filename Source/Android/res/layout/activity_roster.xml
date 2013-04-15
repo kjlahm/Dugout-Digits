@@ -1,0 +1,44 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/default_background"
+    tools:context=".Roster" >
+        
+    <Spinner
+        android:id="@+id/roster_teamdropdown"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true" />
+    
+    <LinearLayout
+        android:id="@+id/roster_buttonbar"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal" >
+            
+        <Button
+            android:id="@+id/roster_addplayer"
+            android:text="@string/roster_addplayer_btntext"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+            
+        <Button
+            android:id="@+id/roster_sync"
+            android:text="@string/roster_sync_btntext"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+            
+    </LinearLayout>
+        
+    <ListView
+        android:id="@+id/roster_teamplayers"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@id/roster_buttonbar"
+        android:layout_below="@id/roster_teamdropdown" />
+
+</RelativeLayout>
