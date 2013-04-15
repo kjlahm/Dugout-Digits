@@ -38,36 +38,35 @@ namespace DugoutDigits.Utilities
             command = connection.CreateCommand();
         }
 
-        public String TestConnection(String query)
-        {
+        /// <summary>
+        /// Method used to insert data into a table. This method is useful when no 
+        /// response is needed from the database.
+        /// </summary>
+        /// <param name="query">The query to be executed.</param>
+        /// <returns>The success of the attempted query.</returns>
+        private bool ExecuteInsert(String query) {
             MySqlDataReader dr = null;
-            String result = "";
+            bool success = true;
 
             try {
                 connection.Open();
                 command.CommandText = query;
                 dr = command.ExecuteReader();
-
-                while (dr.Read())
-                {
-                    for (int i = 0; i < dr.FieldCount; i++)
-                    {
-                        result += dr.GetValue(i).ToString() + ",";
-                    }
-                }
-            } catch {
-            } finally {
+            }
+            catch {
+                success = false;
+            }
+            finally {
                 connection.Close();
             }
-
-            return result;
+            return success;
         }
 
         /// <summary>
         /// This methods checks if the given email is found in the database.
         /// </summary>
         /// <param name="email">The email to look for.</param>
-        /// <returns>If the email is found or not.</returns>
+        /// <returns>If the email is found (returns false) or not (returns true).</returns>
         public bool CheckEmail(String email) {
             MySqlDataReader dr = null;
             String query = "SELECT * FROM DD_Person WHERE email='" + email + "'";
@@ -113,34 +112,6 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
-        /// Method used to insert data into a table. This method is useful when no 
-        /// response is needed from the database.
-        /// </summary>
-        /// <param name="query">The query to be executed.</param>
-        /// <returns>The success of the attempted query.</returns>
-        private bool ExecuteInsert(String query)
-        {
-            MySqlDataReader dr = null;
-            bool success = true;
-
-            try
-            {
-                connection.Open();
-                command.CommandText = query;
-                dr = command.ExecuteReader();
-            }
-            catch
-            {
-                success = false;
-            }
-            finally
-            {
-                connection.Close();
-            }
-            return success;
-        }
-
-        /// <summary>
         /// Checks if the given email/password combo is in the database. There are four 
         /// possible resulting messages. If an error occurs during the process a simple 
         /// "error" is returned. If multiple entries are found for the email "email 
@@ -180,6 +151,7 @@ namespace DugoutDigits.Utilities
                 if (resultCount == 1) {
                     if (matchPass.Equals(encryptedPass)) {
                         response.success = (int)LogonResults.SUCCESS;
+                        user.email = email;
                         response.user = user;
                     }
                     else {
@@ -210,7 +182,7 @@ namespace DugoutDigits.Utilities
         /// Get's the user's information of the associated email.
         /// </summary>
         /// <param name="email">The email to look up.</param>
-        /// <returns>The Player user associated with the given email.</returns>
+        /// <returns>The user associated with the given email.</returns>
         public Person GetPersonInformation(String email) {
             MySqlDataReader dr = null;
             Person returnVal = null;
@@ -242,6 +214,7 @@ namespace DugoutDigits.Utilities
                 returnVal.permissions = permissions;
             }
             catch {
+                returnVal = null;
             }
             finally {
                 connection.Close();

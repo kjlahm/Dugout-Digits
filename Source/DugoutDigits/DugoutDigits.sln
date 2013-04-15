@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DugoutDigits", "DugoutDigits\DugoutDigits.csproj", "{0CF7E0B7-C6FA-4347-B485-369354CE329B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestAccessor", "TestAccessor\TestAccessor.csproj", "{0A36C22A-E30F-4170-91AD-66F7E29A407D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{0CF7E0B7-C6FA-4347-B485-369354CE329B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CF7E0B7-C6FA-4347-B485-369354CE329B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CF7E0B7-C6FA-4347-B485-369354CE329B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A36C22A-E30F-4170-91AD-66F7E29A407D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A36C22A-E30F-4170-91AD-66F7E29A407D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A36C22A-E30F-4170-91AD-66F7E29A407D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A36C22A-E30F-4170-91AD-66F7E29A407D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

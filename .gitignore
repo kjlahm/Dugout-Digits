@@ -6,5 +6,6 @@ obj
 TestResults
 
 /Source/DugoutDigits/DugoutDigits/Utilities/AppConstants.cs
+/Source/DugoutDigits/TestAccessor/TestConstants.cs
 
 *.suo
