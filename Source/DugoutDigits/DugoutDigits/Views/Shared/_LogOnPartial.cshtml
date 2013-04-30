@@ -1,6 +1,10 @@
 ﻿@if(Request.IsAuthenticated) {
     try {
-        <text>Welcome @Request.Cookies["DD_name"].Value | @Html.ActionLink("Settings", "Edit", "Account") | @Html.ActionLink("Log Off", "LogOff", "Account")</text>
+        if (ViewBag.SiteAdmin != null && ViewBag.SiteAdmin) {
+            <text>Welcome @Request.Cookies["DD_name"].Value | @Html.ActionLink("Settings", "Edit", "Account") | @Html.ActionLink("Admin", "Index", "Admin") | @Html.ActionLink("Log Off", "LogOff", "Account")</text>
+        } else {
+            <text>Welcome @Request.Cookies["DD_name"].Value | @Html.ActionLink("Settings", "Edit", "Account") | @Html.ActionLink("Log Off", "LogOff", "Account")</text>
+        }
     } catch (Exception ex) {
         <text>@User.Identity.Name | @Html.ActionLink("Settings", "Edit", "Account") | @Html.ActionLink("Log Off", "LogOff", "Account")</text>
     }

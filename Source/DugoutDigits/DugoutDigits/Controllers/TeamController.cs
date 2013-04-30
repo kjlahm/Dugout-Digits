@@ -500,19 +500,27 @@ namespace DugoutDigits.Controllers
             if (Request.IsAuthenticated) {
 
                 DBAccessor dba = new DBAccessor();
-                Request request = dba.GetRequest(requestID);
+                Request request = dba.GetRequest(requestID, RequestType.JOIN_TEAM);
 
-                // Form the player information
-                result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
-                result += "<h3>Pending Request</h3>\n";
-                result += "<div id='request-details-left'>\n<img src='" + request.requestee.imageURL + "' alt='player picture' />\n</div>\n";
-                result += "<div id='request-details-right'>\n";
-                result += "<p>" + request.requestee.firstName + " " + request.requestee.lastName + "</p>\n";
-                result += "<p>" + request.requestee.email + "</p>\n";
-                result += "<p> Requests to join the " + request.team.name + "</p>\n";
-                result += "<img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptrequest(" + request.ID + ")' />";
-                result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declinerequest(" + request.ID + ")' />";
-                result += "</div>\n";
+                if (request != null) {
+                    // Form the player information
+                    result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
+                    result += "<h3>Pending Request</h3>\n";
+                    result += "<div id='request-details-left'>\n<img src='" + request.requestee.imageURL + "' alt='player picture' />\n</div>\n";
+                    result += "<div id='request-details-right'>\n";
+                    result += "<p>" + request.requestee.firstName + " " + request.requestee.lastName + "</p>\n";
+                    result += "<p>" + request.requestee.email + "</p>\n";
+                    result += "<p> Requests to join the " + request.team.name + "</p>\n";
+                    result += "<img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptrequest(" + request.ID + ")' />";
+                    result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declinerequest(" + request.ID + ")' />";
+                    result += "</div>\n";
+                }
+                else {
+                    result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
+                    result += "<h3>Oops</h3>\n";
+                    result += "<p>Something went wrong retrieving the details of the request.</p>";
+                    result += "</div>\n";
+                }
             }
 
             return Json(
@@ -533,16 +541,24 @@ namespace DugoutDigits.Controllers
                 DBAccessor dba = new DBAccessor();
                 Invitation invite = dba.GetInvite(inviteID);
 
-                // Form the player information
-                result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
-                result += "<h3>Pending Invite</h3>\n";
-                result += "<div id='invite-details-left'>\n<img src='" + invite.invitor.imageURL + "' alt='coach picture' />\n</div>\n";
-                result += "<div id='invite-details-right'>\n";
-                result += "<p>Invited by " + invite.invitor.firstName + " " + invite.invitor.lastName + "</p>\n";
-                result += "<p>Invitation to join the " + invite.team.name + "</p>\n";
-                result += "<img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptinvite(" + invite.ID + ")' />";
-                result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declineinvite(" + invite.ID + ")' />";
-                result += "</div>\n";
+                if (invite != null) {
+                    // Form the player information
+                    result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
+                    result += "<h3>Pending Invite</h3>\n";
+                    result += "<div id='invite-details-left'>\n<img src='" + invite.invitor.imageURL + "' alt='coach picture' />\n</div>\n";
+                    result += "<div id='invite-details-right'>\n";
+                    result += "<p>Invited by " + invite.invitor.firstName + " " + invite.invitor.lastName + "</p>\n";
+                    result += "<p>Invitation to join the " + invite.team.name + "</p>\n";
+                    result += "<img src='./../Content/images/accept.png' height='20' width='20' class='request-action-image' alt='accept' onClick='action_acceptinvite(" + invite.ID + ")' />";
+                    result += "<img src='./../Content/images/decline.png' height='20' width='20' class='request-action-image' margin-right='5px' alt='decline' onClick='action_declineinvite(" + invite.ID + ")' />";
+                    result += "</div>\n";
+                }
+                else {
+                    result = "<div class='lightbox-content-close clickable-text' onclick='action_hidedetails()'>Close</div>";
+                    result += "<h3>Oops</h3>\n";
+                    result += "<p>Something went wrong retrieving the details of the invite.</p>";
+                    result += "</div>\n";
+                }
             }
 
             return Json(
@@ -612,7 +628,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "Invalid attempt to remove team.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to remove the team " + team.name + "(ID: " + team.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.REMOVE_TEAM, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to remove the team " + team.name + "(ID: " + team.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -738,7 +758,7 @@ namespace DugoutDigits.Controllers
                 Person requestee = dba.GetPersonInformation(User.Identity.Name);
 
                 // Get the request that's trying to be removed
-                Request request = dba.GetRequest(requestID);
+                Request request = dba.GetRequest(requestID, RequestType.JOIN_TEAM);
 
                 if (request.requestee.email == requestee.email || request.team.coaches.Contains(requestee, new PersonComparer())) {
                     // Remove the request to the database
@@ -750,7 +770,11 @@ namespace DugoutDigits.Controllers
                     result = "Invalid attempt to remove request.";
                     String message = "Attempt to remove request from " + request.requestee.firstName + " " + request.requestee.lastName + " (ID " + request.requestee.ID + ") ";
                     message += "to join " + request.team.name + " (ID " + request.team.ID + ").";
-                    dba.LogInvalidRequest(User.Identity.Name, message);
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.REMOVE_REQUEST_JOIN, LogAction.NA);
+                    entry.User = requestee;
+                    entry.Message = message;
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -776,7 +800,7 @@ namespace DugoutDigits.Controllers
                 DBAccessor dba = new DBAccessor();
 
                 // Get the player and team IDs from the database
-                Request request = dba.GetRequest(requestID);
+                Request request = dba.GetRequest(requestID, RequestType.JOIN_TEAM);
 
                 // Ensure the get request call worked
                 if (request == null) {
@@ -811,7 +835,11 @@ namespace DugoutDigits.Controllers
                         result = "Invalid attempt to accept request.";
                         String message = "Attempt to accept request from " + request.requestee.firstName + " " + request.requestee.lastName + " (ID " + request.requestee.ID + ") ";
                         message += "to join " + request.team.name + " (ID " + request.team.ID + ").";
-                        dba.LogInvalidRequest(User.Identity.Name, message);
+
+                        LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.ACCEPT_REQUEST_JOIN, LogAction.NA);
+                        entry.User = user;
+                        entry.Message = message;
+                        dba.LogMessage(entry);
                     }
                 }
             }
@@ -845,7 +873,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "Invalid request to remove invite.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to remove invite (ID " + invite.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.REMOVE_INVITE, LogAction.NA);
+                    entry.User = new Person("NA", "NA", User.Identity.Name, "NA");
+                    entry.Message = "Attempt to remove invite (ID " + invite.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -904,7 +936,11 @@ namespace DugoutDigits.Controllers
                     }
                     else {
                         result = "Invalid attempt to accept an invite.";
-                        dba.LogInvalidRequest(User.Identity.Name, "Attempt to accept invite (ID " + invite.ID + ").");
+
+                        LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.ACCEPT_INVITE, LogAction.NA);
+                        entry.User = new Person("NA", "NA", User.Identity.Name, "NA");
+                        entry.Message = "Attempt to accept invite (ID " + invite.ID + ").";
+                        dba.LogMessage(entry);
                     }
                 }
             }
@@ -973,7 +1009,11 @@ namespace DugoutDigits.Controllers
                     }
                     else {
                         successMessage = "Invalid attempt to invite user.";
-                        dba.LogInvalidRequest(User.Identity.Name, "Attempt to invite "+inviteEmail+" to join "+team.name+" (ID "+team.ID+").");
+
+                        LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.INVITE_USER, LogAction.NA);
+                        entry.User = user;
+                        entry.Message = "Attempt to invite "+inviteEmail+" to join "+team.name+" (ID "+team.ID+").";
+                        dba.LogMessage(entry);
                     }
                 }
                 else {
@@ -1045,7 +1085,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "You must be on the team or a coach of the team to view the players.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view players of " + team.name + " (" + team.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.GET_TEAM_MEMBERS, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to view players of " + team.name + " (" + team.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -1080,7 +1124,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "You must be on the team or a coach of the team to view the coaches.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view coaches of " + team.name);
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.GET_TEAM_COACHES, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to view coaches of " + team.name;
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -1152,7 +1200,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "You must be on the team or a coach of the team to view the seasons.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to view seasons of " + team.name + " ("+team.ID+").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.GET_SEASONS, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to view seasons of " + team.name + " ("+team.ID+").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -1184,7 +1236,11 @@ namespace DugoutDigits.Controllers
                     }
                 } else {
                     result = "You must be a coach of the team to add a season.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a season to "+team.name + " (" + team.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.ADD_SEASON, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to add a season to "+team.name + " (" + team.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -1289,7 +1345,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "You must be a coach of the team to add a game.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a game to " + team.name + " (" + team.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.ADD_GAME, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to add a game to " + team.name + " (" + team.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 
@@ -1384,7 +1444,11 @@ namespace DugoutDigits.Controllers
                 }
                 else {
                     result = "You must be a coach of the team to add a practice.";
-                    dba.LogInvalidRequest(User.Identity.Name, "Attempt to add a practice to " + team.name + " (" + team.ID + ").");
+
+                    LogEntry entry = new LogEntry(LogType.INVALID_REQUEST, LogFunction.ADD_PRACTICE, LogAction.NA);
+                    entry.User = user;
+                    entry.Message = "Attempt to add a practice to " + team.name + " (" + team.ID + ").";
+                    dba.LogMessage(entry);
                 }
             }
 

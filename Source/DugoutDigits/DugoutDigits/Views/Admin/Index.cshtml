@@ -1,0 +1,22 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@if (ViewBag.SiteAdmin) {
+    <div id="subtabs">
+        <ul>
+            <li id="subtab-coachrequests" class="active-subtab">Coach Requests</li>
+            <li id="subtab-invalidrequests" class="inactive-subtab">Invalid Requests</li>
+        </ul>
+    </div>
+    
+    <div id="inner-content"></div>
+    <div id="content-buffer"></div>
+}
+else {
+    <p>You shouldn't have gotten here...</p>
+}
+
+<!-- Include necesary scripts at the bottom of the page. -->
+<script type="text/javascript" src="./../../Scripts/admin.js"></script>

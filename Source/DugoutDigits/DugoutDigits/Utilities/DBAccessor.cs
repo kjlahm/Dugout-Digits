@@ -53,7 +53,7 @@ namespace DugoutDigits.Utilities
                 command.CommandText = query;
                 dr = command.ExecuteReader();
             }
-            catch {
+            catch (Exception ex) {
                 success = false;
             }
             finally {
@@ -210,6 +210,7 @@ namespace DugoutDigits.Utilities
                 //returnVal.weight = dr.GetInt16("weight");
 
                 permissions.coachEnabled = !(dr.GetInt16("coachEnabled") == 0);
+                permissions.siteAdmin = !(dr.GetInt16("siteAdmin") == 0);
 
                 returnVal.permissions = permissions;
             }
@@ -237,6 +238,17 @@ namespace DugoutDigits.Utilities
             query += "height=" + user.height + ", ";
             query += "weight=" + user.weight + " ";
             query += "WHERE email='" + email + "'";
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Adds a coach permission to the user with the given person ID.
+        /// </summary>
+        /// <param name="personID">The person ID of the user to add coach permission to.</param>
+        /// <returns>Success of the update.</returns>
+        public bool AddCoachPermission(long personID) {
+            String query = "UPDATE " + AppConstants.MYSQL_TABLE_PERMISSIONS + " SET ";
+            query += "coachEnabled=1 WHERE personID=" + personID;
             return ExecuteInsert(query);
         }
 
@@ -280,6 +292,45 @@ namespace DugoutDigits.Utilities
             }
 
             return returnID;
+        }
+
+        /// <summary>
+        /// Gets the requests from users who wish to have the coach permission.
+        /// </summary>
+        /// <returns>A list of the requests from users to have the coach permission added.</returns>
+        public List<Request> GetCoachRequests() {
+            List<Request> returnVal = new List<Request>();
+            MySqlDataReader dr = null;
+
+            String query = "SELECT * FROM ";
+            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+            query += "WHERE person.personID=request.personID AND request.type=" + (int)RequestType.COACH_PERMISSION;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+
+                Person requestee;
+                Request request;
+                while (dr.Read()) {
+                    requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    requestee.ID = dr.GetInt64("personID");
+                    requestee.email = dr.GetString("email");
+
+                    request = new Request(RequestType.COACH_PERMISSION, requestee, new Team());
+                    request.ID = dr.GetInt64("requestID");
+                    returnVal.Add(request);
+                }
+            }
+            catch {
+                returnVal = null;
+            }
+            finally {
+                connection.Close();
+            }
+
+            return returnVal;
         }
 
         /// <summary>
@@ -674,6 +725,44 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
+        /// Adds a new generic request to the database.
+        /// </summary>
+        /// <param name="requesteeID">The user ID of the person making a request.</param>
+        /// <param name="type">The type of the request being made.</param>
+        /// <returns>Success of the addition of the request.</returns>
+        public bool AddNewRequest(long requesteeID, RequestType type) {
+            // Check for a current request in the system
+            MySqlDataReader dr = null;
+            String query = "SELECT requestID FROM ";
+            query += AppConstants.MYSQL_TABLE_REQUESTS;
+            query += " WHERE personID=" + requesteeID + " AND type=" + (int)type;
+
+            try {
+                connection.Open();
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                bool rowsFound = dr.HasRows;
+                connection.Close();
+
+                // If an entry is found a request is already pending, return true.
+                if (rowsFound) {
+                    return true;
+                }
+            }
+            catch {
+                connection.Close();
+            }
+
+            // Add the entry to the DB
+            query = "INSERT INTO ";
+            query += AppConstants.MYSQL_TABLE_REQUESTS;
+            query += " (personID, type) VALUES (";
+            query += requesteeID + ", ";
+            query += (int)type + ")";
+            return ExecuteInsert(query);
+        }
+
+        /// <summary>
         /// Removes a request entry from the database corresponding to the given request ID.
         /// </summary>
         /// <param name="requestID">The ID of the entry to be deleted</param>
@@ -704,13 +793,20 @@ namespace DugoutDigits.Utilities
         /// </summary>
         /// <param name="requestID">The request ID to search for.</param>
         /// <returns>The details matching the request ID.</returns>
-        public Request GetRequest(long requestID) {
+        public Request GetRequest(long requestID, RequestType type) {
             Request returnVal = null;
             MySqlDataReader dr = null;
 
-            String query = "SELECT * FROM ";
-            query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
-            query += "WHERE person.personID=request.personID AND team.teamID=request.teamID AND request.requestID=" + requestID;
+            String query = "";
+            if (type.Equals(RequestType.JOIN_TEAM)) {
+                query = "SELECT * FROM ";
+                query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_TEAM + " team, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+                query += "WHERE person.personID=request.personID AND team.teamID=request.teamID AND request.requestID=" + requestID;
+            } else {
+                query = "SELECT * FROM ";
+                query += AppConstants.MYSQL_TABLE_PERSON + " person, " + AppConstants.MYSQL_TABLE_REQUESTS + " request ";
+                query += "WHERE person.personID=request.personID AND request.requestID=" + requestID;
+            }
 
             try {
                 connection.Open();
@@ -719,27 +815,40 @@ namespace DugoutDigits.Utilities
 
                 Person requestee;
                 Team team;
-                dr.Read();
-                requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
-                requestee.ID = dr.GetInt64("personID");
-                requestee.email = dr.GetString("email");
-                //requestee.imageURL = dr.GetString("imageURL");
-                //requestee.height = dr.GetInt16("height");
-                //requestee.weight = dr.GetInt16("weight");
-                //requestee.birthday = dr.GetDateTime("birthday");
 
-                team = new Team();
-                team.ID = dr.GetInt64("teamID");
-                
-                returnVal = new Request(requestee, team);
-                returnVal.ID = requestID;
-            } catch {
+                if (dr.HasRows) {
+                    dr.Read();
+                    requestee = new Person(dr.GetString("firstName"), dr.GetString("lastName"));
+                    requestee.ID = dr.GetInt64("personID");
+                    requestee.email = dr.GetString("email");
+                    //requestee.imageURL = dr.GetString("imageURL");
+                    //requestee.height = dr.GetInt16("height");
+                    //requestee.weight = dr.GetInt16("weight");
+                    //requestee.birthday = dr.GetDateTime("birthday");
+
+
+                    team = new Team();
+                    if (type.Equals(RequestType.JOIN_TEAM)) {
+                        team.ID = dr.GetInt64("teamID");
+                    }
+
+                    returnVal = new Request(type, requestee, team);
+                    returnVal.ID = requestID;
+                }
+                else {
+                    returnVal = null;
+                }
+            }
+            catch (Exception ex) {
                 returnVal = null;
-            } finally {
+            }
+            finally {
                 connection.Close();
             }
 
-            returnVal.team = GetTeamDetails(returnVal.team.ID);
+            if (returnVal != null && returnVal.type.Equals(RequestType.JOIN_TEAM)) {
+                returnVal.team = GetTeamDetails(returnVal.team.ID);
+            }
 
             return returnVal;
         }
@@ -783,7 +892,7 @@ namespace DugoutDigits.Utilities
                     team.ID = dr.GetInt64("teamID");
                     team.coaches.Add(coach);
 
-                    request = new Request(requestee, team);
+                    request = new Request(RequestType.JOIN_TEAM, requestee, team);
                     request.ID = dr.GetInt64("requestID");
                     returnVal.Add(request);
                 }
@@ -824,7 +933,7 @@ namespace DugoutDigits.Utilities
                     team.name = dr.GetString("name");
                     team.ID = dr.GetInt64("teamID");
 
-                    request = new Request(user, team);
+                    request = new Request(RequestType.JOIN_TEAM, user, team);
                     request.ID = dr.GetInt64("requestID");
                     request.timestamp = dr.GetDateTime("timestamp");
                     returnVal.Add(request);
@@ -875,7 +984,7 @@ namespace DugoutDigits.Utilities
                     team = new Team();
                     team.name = dr.GetString("name");
 
-                    request = new Request(requestee, team);
+                    request = new Request(RequestType.JOIN_TEAM, requestee, team);
                     request.ID = dr.GetInt64("requestID");
                     returnVal.Add(request);
                 }
@@ -1181,17 +1290,103 @@ namespace DugoutDigits.Utilities
         }
 
         /// <summary>
-        /// Adds a log entry about a request made from a user who was not validated 
-        /// to make said request.
+        /// Adds the given log message to the database.
         /// </summary>
-        /// <param name="email">Email of the user who was authenticated when the invalid request was made.</param>
-        /// <param name="message">A brief message about the request.</param>
-        /// <returns>Success of the log entry.</returns>
-        public bool LogInvalidRequest(string email, string message) {
-            long ID = GetPersonID(email);
-            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_LOGINVALIDREQUESTS;
-            query += " (userID, message) VALUES (" + ID + ", '" + message + "')";
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public bool LogMessage(LogEntry message) {
+            long ID = GetPersonID(message.User.email);
+            String query = "INSERT INTO " + AppConstants.MYSQL_TABLE_LOG;
+            query += " (type, function, action, message, personID) VALUES (" + (int) message.Type + ", " + message.Function + ", " + message.Action + ", '" + message.Message + "', " + ID + ")";
             return ExecuteInsert(query);
+        }
+
+        /// <summary>
+        /// Gets all the invalid request attempts logged in the database.
+        /// </summary>
+        /// <returns>A list of the invalid request attempts.</returns>
+        public List<LogEntry> GetLogMessages(LogType type) {
+            String query = "SELECT firstName, lastName, email, log.personID, log.timestamp, message, function, action, logID FROM ";
+            query += AppConstants.MYSQL_TABLE_LOG + " log, " + AppConstants.MYSQL_TABLE_PERSON + " person ";
+            query += "WHERE log.personID=person.personID AND log.type=" + (int) type;
+
+            List<LogEntry> returnVal = null;
+            MySqlDataReader dr = null;
+            bool needToClose = false;
+            try {
+                // Try to open a connection if one hasn't been opened.
+                try {
+                    connection.Open();
+                    needToClose = true;
+                }
+                catch {
+                }
+
+                command.CommandText = query;
+                dr = command.ExecuteReader();
+                returnVal = new List<LogEntry>();
+
+                LogEntry message;
+                Person user;
+                while (dr.Read()) {
+                    // Get user information
+                    try {
+                        user = new Person();
+                        user.firstName = dr.GetString("firstName");
+                        user.lastName = dr.GetString("lastName");
+                        user.email = dr.GetString("email");
+                        user.ID = dr.GetInt64("personID");
+                    }
+                    catch {
+                        user = null;
+                    }
+
+                    // Get log entry information
+                    LogFunction function = (LogFunction) dr.GetInt16("function");
+                    LogAction action = (LogAction) dr.GetInt16("action");
+                    DateTime timestamp = dr.GetDateTime("timestamp");
+                    long ID = dr.GetInt64("logID");
+                    string messageText = dr.GetString("message");
+                    message = new LogEntry(type, function, action, timestamp, ID, messageText, user);
+
+                    returnVal.Add(message);
+                }
+            }
+            catch (Exception ex) {
+            }
+            finally {
+                if (needToClose) {
+                    connection.Close();
+                }
+            }
+            return returnVal;
+        }
+
+        /// <summary>
+        /// Removes all log messages with a timestamp earlier than the date/time provided.
+        /// </summary>
+        /// <param name="type">The type of log messages to delete.</param>
+        /// <param name="timeFilter">The date/time to reference.</param>
+        /// <returns>The number of rows affected. A result of -1 means an error occured.</returns>
+        public int RemoveLogMessages(LogType type, DateTime timeFilter) {
+            String query = "DELETE FROM " + AppConstants.MYSQL_TABLE_LOG + " WHERE type=" + (int) type + " AND timestamp < @date";
+            int rowAffected = 0;
+
+            MySqlDataReader dr = null;
+            try {
+                connection.Open();
+                command.CommandText = query;
+                command.Parameters.AddWithValue("@date", timeFilter);
+                dr = command.ExecuteReader();
+                rowAffected = dr.RecordsAffected;
+            }
+            catch {
+                rowAffected = -1;
+            }
+            finally {
+                connection.Close();
+            }
+            return rowAffected;
         }
 
         /// <summary>

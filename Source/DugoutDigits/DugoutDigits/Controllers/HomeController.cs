@@ -24,6 +24,7 @@ namespace DugoutDigits.Controllers
                 ViewBag.LastName = user.lastName;
                 ViewBag.ImageURL = user.imageURL;
                 ViewBag.CoachPermission = user.permissions.coachEnabled;
+                ViewBag.SiteAdmin = user.permissions.siteAdmin;
                 //List<string> teams = dba.GetTeamListCoach(User.Identity.Name);
                 //ViewBag.TeamNames = teams;
                 //ViewBag.TeamCount = teams.Count;

@@ -200,15 +200,17 @@ function render_registercoach() {
     $('#inner-content').html("");
 
     var returnVal = "<h3>Interested in Joining?</h3>\n";
-    returnVal += "<p>If you'd like to use Dugout Digits to help manage your team send an email ";
-    returnVal += "to <a href='mailto:admin@dugoutdigits.com'>admin@dugoutdigits.com</a></p>\n";
-    returnVal += "<p>Be sure to include the email you use to login to Dugout Digits in the message</p>\n";
+    returnVal += "<p>If you'd like to use Dugout Digits to help manage your team ";
+    returnVal += "<div class='submit-button' onClick='action_requestcoach()'>Click Here</div></p>\n";
+    returnVal += "<p>If you don't hear back in a weeks time send an email to <a href='mailto:admin@dugoutdigits.com'>admin@dugoutdigits.com</a>.</p>\n";
+    returnVal += "<div id='requestcoach-success-message'></div>";
     $('#content-buffer').html(returnVal);
 
     // Grow the content section to the right size
     var newHeight = $('#content-buffer').height();
     $('#inner-content').animate({ height: newHeight + 30 }, 500, "linear", function () {
         $('#inner-content').html($('#content-buffer').html()).hide().fadeIn();
+        $('#content-buffer').html("");
     });
 }
 
@@ -300,6 +302,20 @@ function action_inviteuser() {
         },
         error: function () {
             alert("error making invite call");
+        }
+    });
+}
+
+function action_requestcoach() {
+    /* make the call to the invite user web service */
+    $.ajax({
+        url: "Admin/AddCoachRequest",
+        dataType: "json",
+        success: function (data) {
+            $('#requestcoach-success-message').html(data.message);
+        },
+        error: function () {
+            $('#requestcoach-success-message').html("Error requesting coach access.");
         }
     });
 }

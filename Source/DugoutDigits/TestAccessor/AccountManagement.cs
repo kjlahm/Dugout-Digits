@@ -54,12 +54,26 @@ namespace TestAccessor {
             Assert.AreEqual(TestConstants.GETPERSONINFORMATION_LASTNAME, person.lastName);
             Assert.AreEqual(TestConstants.GETPERSONINFORMATION_USERID, person.ID);
             Assert.AreEqual(TestConstants.GETPERSONINFORMATION_COACHENABLED, person.permissions.coachEnabled);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_SITEADMIN, person.permissions.siteAdmin);
+        }
+
+        [TestMethod]
+        public void Test_GetPersonInformation_Found_SiteAdmin() {
+            DBAccessor dba = new DBAccessor();
+            Person person = dba.GetPersonInformation(TestConstants.GETPERSONINFORMATION_VALIDEMAIL_ADMIN);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_VALIDEMAIL_ADMIN, person.email);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_PASSWORD_ADMIN, person.getUnencryptedPassword());
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_FIRSTNAME_ADMIN, person.firstName);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_LASTNAME_ADMIN, person.lastName);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_USERID_ADMIN, person.ID);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_COACHENABLED_ADMIN, person.permissions.coachEnabled);
+            Assert.AreEqual(TestConstants.GETPERSONINFORMATION_SITEADMIN_ADMIN, person.permissions.siteAdmin);
         }
 
         [TestMethod]
         public void Test_GetPersonInformation_NotFound() {
             DBAccessor dba = new DBAccessor();
-            Person person = dba.GetPersonInformation(TestConstants.GETPERSONINFORMATION_INVALIDEMAIL);
+            Person person = dba.GetPersonInformation(TestConstants.GETPERSONINFORMATION_INVALIDEMAIL_ADMIN);
             Assert.AreEqual(null, person);
         }
     }

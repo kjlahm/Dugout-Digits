@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\TeamController.cs" />
     <Compile Include="Global.asax.cs">
@@ -85,6 +86,7 @@
     <Compile Include="Objects\HalfInning.cs" />
     <Compile Include="Objects\Inning.cs" />
     <Compile Include="Objects\Invitation.cs" />
+    <Compile Include="Objects\LogEntry.cs" />
     <Compile Include="Objects\Permissions.cs" />
     <Compile Include="Objects\Practice.cs" />
     <Compile Include="Objects\Request.cs" />
@@ -135,6 +137,7 @@
     <Content Include="Content\themes\base\jquery.ui.tabs.css" />
     <Content Include="Content\themes\base\jquery.ui.theme.css" />
     <Content Include="Global.asax" />
+    <Content Include="Scripts\admin.js" />
     <Content Include="Scripts\feedback.js" />
     <Content Include="Scripts\index.js" />
     <Content Include="Scripts\jquery-1.5.1-vsdoc.js" />
@@ -187,13 +190,13 @@
     <Content Include="Views\Account\Edit.cshtml" />
     <Content Include="Views\Shared\_LayoutInner.cshtml" />
     <Content Include="Views\Team\Join.cshtml" />
-    <None Include="Properties\PublishProfiles\DugoutDigits Web Deploy.pubxml" />
     <Content Include="Views\Team\Overview.cshtml" />
     <Content Include="Views\Team\Schedule.cshtml" />
     <Content Include="Views\Team\Roster.cshtml" />
     <Content Include="Views\Team\Stats.cshtml" />
     <Content Include="Views\Team\Messages.cshtml" />
-    <None Include="Properties\PublishProfiles\WinHostWebDeploy.pubxml" />
+    <Content Include="Views\Admin\Index.cshtml" />
+    <None Include="Properties\PublishProfiles\Winhost Deploy.pubxml" />
     <None Include="_bin_deployableAssemblies\System.Web.Mvc.dll" />
     <None Include="_bin_deployableAssemblies\WebMatrix.WebData.xml" />
     <None Include="_bin_deployableAssemblies\WebMatrix.WebData.dll" />

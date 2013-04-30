@@ -8,12 +8,14 @@ namespace DugoutDigits.Objects
     public class Permissions
     {
         public Boolean coachEnabled { get; set; }
+        public Boolean siteAdmin { get; set; }
 
-        public Permissions(bool coach)
+        public Permissions(bool coach, bool admin)
         {
             coachEnabled = coach;
+            siteAdmin = admin;
         }
 
-        public Permissions() : this(false) { }
+        public Permissions() : this(false, false) { }
     }
 }
